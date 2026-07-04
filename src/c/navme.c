@@ -80,7 +80,7 @@ static Layer *s_status_bar_layer;
 
 // State Variables
 static char s_distance_text[32] = "";
-static char s_street_text[128] = "Aguardando sinal... [Steer v2.0]";
+static char s_street_text[128] = "Waiting for signal... [Steer v2.0]";
 static char s_eta_text[16] = "ETA: --:--";
 static char s_gps_text[32] = "GPS: ---";
 static int s_maneuver_index = -1;  // -1 means no active maneuver, show chevron
@@ -90,6 +90,24 @@ static int s_current_speed = -1;   // current speed in km/h from the phone GPS; 
 // Speedometer display placement is still TBD (Bruno designs the layout). The value is
 // plumbed + stored now; flip this to 1 once the on-watch layout is decided.
 #define STEER_SHOW_SPEEDOMETER 0
+
+// --- Localization ---------------------------------------------------------
+// English is the default UI language; Portuguese is selected automatically when
+// the watch's system language is Portuguese. i18n_get_system_locale() returns a
+// string like "en_US" or "pt_PT".
+static bool prv_lang_is_pt(void) {
+  const char *loc = i18n_get_system_locale();
+  return loc && loc[0] == 'p' && loc[1] == 't';
+}
+// Pick between an English and a Portuguese literal based on the system locale.
+static const char *prv_tr(const char *en, const char *pt) {
+  return prv_lang_is_pt() ? pt : en;
+}
+// Fill s_street_text with the localized "waiting for signal" placeholder.
+static void prv_set_waiting_text(void) {
+  snprintf(s_street_text, sizeof(s_street_text), "%s [Steer v2.0]",
+           prv_tr("Waiting for signal...", "Aguardando sinal..."));
+}
 
 typedef struct {
   char name[32];
@@ -1836,7 +1854,7 @@ static void inbox_received_handler(DictionaryIterator *iterator, void *context) 
   if (cancel_t) {
     s_maneuver_index = -1;
     s_distance_text[0] = '\0';
-    snprintf(s_street_text, sizeof(s_street_text), "Aguardando sinal... [Steer v2.0]");
+    prv_set_waiting_text();
     snprintf(s_eta_text, sizeof(s_eta_text), "ETA: --:--");
     s_bg_color = NAV_SCREEN_BG;
     s_has_forwarded_icon = false;
@@ -1894,7 +1912,8 @@ static void prv_fav_menu_select_callback(int index, void *context) {
   }
   
   // Show starting route on the screen and close favorites window
-  snprintf(s_street_text, sizeof(s_street_text), "Iniciando rota...");
+  snprintf(s_street_text, sizeof(s_street_text), "%s",
+           prv_tr("Starting route...", "Iniciando rota..."));
   prv_update_ui();
   
   if (s_favorites_window) {
@@ -1905,11 +1924,11 @@ static void prv_fav_menu_select_callback(int index, void *context) {
 static void prv_update_favorites_menu_data(void) {
   if (s_fav_count == 0) {
     s_menu_items[0] = (SimpleMenuItem) {
-      .title = "Sem favoritos",
-      .subtitle = "Adicione no telefone",
+      .title = prv_tr("No favourites", "Sem favoritos"),
+      .subtitle = prv_tr("Add one on the phone", "Adicione no telefone"),
     };
     s_menu_sections[0] = (SimpleMenuSection) {
-      .title = "Favoritos",
+      .title = prv_tr("Favourites", "Favoritos"),
       .num_items = 1,
       .items = s_menu_items,
     };
@@ -1921,7 +1940,7 @@ static void prv_update_favorites_menu_data(void) {
       };
     }
     s_menu_sections[0] = (SimpleMenuSection) {
-      .title = "Favoritos",
+      .title = prv_tr("Favourites", "Favoritos"),
       .num_items = s_fav_count,
       .items = s_menu_items,
     };
@@ -2062,6 +2081,9 @@ static void prv_init(void) {
 
   // Subscribe to minute tick service for the status bar clock
   tick_timer_service_subscribe(MINUTE_UNIT, prv_tick_handler);
+
+  // Localize the initial placeholder text now that we can read the system locale.
+  prv_set_waiting_text();
 
   const bool animated = true;
   window_stack_push(s_window, animated);
