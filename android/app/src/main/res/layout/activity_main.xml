@@ -172,6 +172,87 @@
             android:fontFamily="sans-serif-condensed"
             android:text="@string/open_favorites" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:fontFamily="sans-serif-condensed"
+            android:text="@string/nav_app_label"
+            android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/navAppToggle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleSelection="true"
+            app:selectionRequired="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/navAppAuto"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:text="@string/nav_app_auto" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/navAppMaps"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:text="@string/nav_app_maps" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/navAppWaze"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:text="@string/nav_app_waze" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/navAppOsmand"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:text="@string/nav_app_osmand" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:fontFamily="sans-serif-condensed"
+            android:text="@string/nav_app_caption"
+            android:textAppearance="?attr/textAppearanceBodySmall" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnGrantOverlay"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:fontFamily="sans-serif-condensed"
+            android:visibility="gone"
+            android:text="@string/overlay_grant" />
+
+        <TextView
+            android:id="@+id/overlayCaption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:visibility="gone"
+            android:fontFamily="sans-serif-condensed"
+            android:text="@string/overlay_caption"
+            android:textAppearance="?attr/textAppearanceBodySmall" />
+
         <com.google.android.material.materialswitch.MaterialSwitch
             android:id="@+id/switchAutolaunch"
             android:layout_width="match_parent"

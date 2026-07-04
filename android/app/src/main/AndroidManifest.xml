@@ -4,6 +4,10 @@
     <!-- Needed to post the fake Google-Maps navigation notification on Android 13+. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- BAL exemption: lets a favorite picked on the watch open the navigator directly from the
+         background. Optional — the launch falls back to a tap-to-launch notification without it. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
     <!-- GPS is our speed source for the watch speedometer + speed-limit alert.
          The navigator (Maps/OsmAnd) has the GPS lock; we passively read the phone's
          own fused/GPS fixes to compute current speed. FINE for accuracy; COARSE as the

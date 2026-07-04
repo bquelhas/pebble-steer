@@ -41,6 +41,7 @@
       "NAV_FAV_NAME": 13,
       "NAV_TRIGGER_ROUTE": 14,
       "NAV_SPEED": 15,
+      "NAV_REQUEST_FAVS": 16,
       "NAV_CANCEL": 99
     },
     "resources": {

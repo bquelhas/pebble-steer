@@ -22,6 +22,17 @@
     <string name="speed_perm_needed">Concede acesso à localização para usar a velocidade</string>
     <string name="speed_grant_perm">Permitir localização</string>
     <string name="section_navigation">Navegação</string>
+    <string name="nav_app_label">App de navegação</string>
+    <string name="nav_app_caption">Usada quando inicias uma rota escolhendo um favorito no relógio.</string>
+    <string name="nav_app_auto">Auto</string>
+    <string name="nav_app_maps">Maps</string>
+    <string name="nav_app_waze">Waze</string>
+    <string name="nav_app_osmand">OsmAnd</string>
+    <string name="overlay_grant">Permitir abrir sobre outras apps</string>
+    <string name="overlay_caption">Para iniciar a navegação diretamente a partir do relógio, o Steer precisa de permissão para abrir apps em segundo plano. Sem ela, recebes uma notificação para tocar e abrir.</string>
+    <string name="nav_launch_title">Navegar para %1$s</string>
+    <string name="nav_launch_body">Toca para iniciar a navegação</string>
+    <string name="nav_launch_channel">Iniciar navegação a partir do relógio</string>
     <string name="section_speed">Velocidade</string>
     <string name="section_appearance">Aparência do relógio</string>
     <string name="units_label">Unidades de distância</string>

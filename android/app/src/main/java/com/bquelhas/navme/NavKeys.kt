@@ -39,5 +39,11 @@ object NavKeys {
                                     // the phone starts navigation to that favorite.
     const val NAV_SPEED = 15        // uint8: current speed in km/h from the phone GPS (0..255),
                                     // for the watch speedometer. Sent while navigating.
+    const val NAV_REQUEST_FAVS = 16 // uint8 (watch->phone): the watchapp just launched and wants
+                                    // its favorites; the phone replies with a full sendFavorites
+                                    // burst. Fixes the empty-menu-until-next-edit sync gap: the
+                                    // watch only holds favorites in RAM, so a fresh launch starts
+                                    // empty unless the phone re-pushes. Watch also persists them
+                                    // locally (persist_write) for instant offline display.
     const val NAV_CANCEL = 99       // uint8: navigation stopped / clear display
 }

@@ -38,6 +38,13 @@ class MainActivity : AppCompatActivity() {
             updateSpeedControls()
         }
 
+    // Returns from the "display over other apps" settings screen; re-check to hide the button
+    // once the user grants the overlay (SYSTEM_ALERT_WINDOW) BAL exemption.
+    private val overlayPermLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            updateOverlayControls()
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -69,6 +76,16 @@ class MainActivity : AppCompatActivity() {
 
         setupSpeedControls()
         setupUnitsToggle()
+        setupNavAppToggle()
+
+        findViewById<MaterialButton>(R.id.btnGrantOverlay).setOnClickListener {
+            overlayPermLauncher.launch(
+                Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    android.net.Uri.parse("package:$packageName")
+                )
+            )
+        }
 
         buildColorPicker()
         applyPreviewColor(NavPrefs.getBgColor(applicationContext))
@@ -82,6 +99,7 @@ class MainActivity : AppCompatActivity() {
         updateStatus()
         updateSetupCard()
         updateSpeedControls()
+        updateOverlayControls()
         // Keep the watch's favorite menu and settings in sync while the app is open.
         if (PebbleEmitter.isWatchConnected(applicationContext)) {
             PebbleEmitter.sendFavorites(applicationContext)
@@ -161,6 +179,40 @@ class MainActivity : AppCompatActivity() {
             }
             NavPrefs.setUnitSystem(applicationContext, units)
         }
+    }
+
+    /** Nav-app picker: used when a favorite is started from the watch. Maps NavApp ↔ button ids. */
+    private fun setupNavAppToggle() {
+        val group = findViewById<MaterialButtonToggleGroup>(R.id.navAppToggle)
+        val checkedId = when (NavPrefs.getNavApp(applicationContext)) {
+            NavApp.AUTO -> R.id.navAppAuto
+            NavApp.GOOGLE_MAPS -> R.id.navAppMaps
+            NavApp.WAZE -> R.id.navAppWaze
+            NavApp.OSMAND -> R.id.navAppOsmand
+        }
+        group.check(checkedId)
+        group.addOnButtonCheckedListener { _, buttonId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val app = when (buttonId) {
+                R.id.navAppMaps -> NavApp.GOOGLE_MAPS
+                R.id.navAppWaze -> NavApp.WAZE
+                R.id.navAppOsmand -> NavApp.OSMAND
+                else -> NavApp.AUTO
+            }
+            NavPrefs.setNavApp(applicationContext, app)
+        }
+    }
+
+    /**
+     * Show the "allow opening over other apps" button only until the overlay
+     * (SYSTEM_ALERT_WINDOW) permission is granted. With it, a favorite picked on the watch opens
+     * the navigator directly; without it the launch degrades to a tap-to-launch notification.
+     */
+    private fun updateOverlayControls() {
+        val granted = Permissions.canDrawOverlays(applicationContext)
+        val vis = if (granted) View.GONE else View.VISIBLE
+        findViewById<MaterialButton>(R.id.btnGrantOverlay).visibility = vis
+        findViewById<TextView>(R.id.overlayCaption).visibility = vis
     }
 
     private fun buildColorPicker() {

@@ -3,6 +3,8 @@ package com.bquelhas.navme
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.Settings
+import android.util.Log
 import android.widget.Toast
 
 /**
@@ -15,6 +17,7 @@ import android.widget.Toast
  */
 object NavLauncher {
 
+    private const val TAG = "NavMe/Launcher"
     private const val PKG_MAPS = "com.google.android.apps.maps"
     private const val PKG_WAZE = "com.waze"
     private const val PKG_OSMAND = "net.osmand.plus"
@@ -60,6 +63,72 @@ object NavLauncher {
             }
         }
         return out
+    }
+
+    /**
+     * Builds the navigator intent for a specific [app], or null when that app can't handle
+     * [query] on this device (not installed, or OsmAnd asked for a non-coordinate query).
+     */
+    fun intentForApp(context: Context, query: String, app: NavApp): Intent? {
+        val isCoords = LATLNG.matches(query)
+        val encoded = Uri.encode(query.trim())
+        return when (app) {
+            NavApp.GOOGLE_MAPS ->
+                if (isInstalled(context, PKG_MAPS))
+                    Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=$encoded"))
+                        .setPackage(PKG_MAPS)
+                else null
+            NavApp.WAZE ->
+                if (isInstalled(context, PKG_WAZE)) {
+                    val uri = if (isCoords) "https://waze.com/ul?ll=$encoded&navigate=yes"
+                              else "https://waze.com/ul?q=$encoded&navigate=yes"
+                    Intent(Intent.ACTION_VIEW, Uri.parse(uri)).setPackage(PKG_WAZE)
+                } else null
+            NavApp.OSMAND -> {
+                if (!isCoords) return null // OsmAnd only takes coordinates
+                val osmPkg = when {
+                    isInstalled(context, PKG_OSMAND) -> PKG_OSMAND
+                    isInstalled(context, PKG_OSMAND_FREE) -> PKG_OSMAND_FREE
+                    else -> return null
+                }
+                Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=${query.trim()}"))
+                    .setPackage(osmPkg)
+            }
+            NavApp.AUTO -> null
+        }
+    }
+
+    /**
+     * Resolves the intent for a watch-triggered launch honoring the user's preferred
+     * navigator ([NavPrefs.getNavApp]); falls back to the first available navigator and
+     * finally a generic geo: intent so the destination always opens *somewhere*.
+     */
+    fun resolveForWatch(context: Context, query: String): Intent {
+        intentForApp(context, query, NavPrefs.getNavApp(context))?.let { return it }
+        return intentsFor(context, query).firstOrNull()?.second ?: genericGeoIntent(query)
+    }
+
+    /**
+     * Launches navigation to [query] in response to a favorite picked on the watch — i.e. from
+     * a background context with no visible activity. Android's Background Activity Launch (BAL)
+     * policy blocks `startActivity` there UNLESS the app holds the "display over other apps"
+     * (SYSTEM_ALERT_WINDOW) permission, which grants a BAL exemption. When it's granted we open
+     * the navigator directly; otherwise we fall back to a tap-to-launch notification (see
+     * [NavLaunchNotifier]) so the destination is never silently dropped.
+     */
+    fun launchForWatch(context: Context, label: String, query: String) {
+        val intent = resolveForWatch(context, query).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (Settings.canDrawOverlays(context)) {
+            try {
+                context.startActivity(intent)
+                Log.i(TAG, "launched '$label' directly (overlay-exempt)")
+                return
+            } catch (e: Exception) {
+                Log.e(TAG, "direct launch failed: ${e.message}")
+            }
+        }
+        Log.i(TAG, "no overlay permission; posting launch notification for '$label'")
+        NavLaunchNotifier.post(context, label, intent)
     }
 
     /**

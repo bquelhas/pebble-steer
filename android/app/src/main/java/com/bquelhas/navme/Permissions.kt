@@ -25,4 +25,12 @@ object Permissions {
             ComponentName.unflattenFromString(entry) == self
         }
     }
+
+    /**
+     * True when the user granted "display over other apps" (SYSTEM_ALERT_WINDOW). Steer uses it
+     * only for the BAL exemption that lets a favorite picked on the watch open the navigator
+     * directly from the background (see [NavLauncher.launchForWatch]); without it that launch
+     * degrades to a tap-to-launch notification.
+     */
+    fun canDrawOverlays(context: Context): Boolean = Settings.canDrawOverlays(context)
 }

@@ -22,6 +22,17 @@
     <string name="speed_perm_needed">Grant location access to use speed</string>
     <string name="speed_grant_perm">Allow location</string>
     <string name="section_navigation">Navigation</string>
+    <string name="nav_app_label">Navigation app</string>
+    <string name="nav_app_caption">Used when you start a route by picking a favourite on the watch.</string>
+    <string name="nav_app_auto">Auto</string>
+    <string name="nav_app_maps">Maps</string>
+    <string name="nav_app_waze">Waze</string>
+    <string name="nav_app_osmand">OsmAnd</string>
+    <string name="overlay_grant">Allow opening over other apps</string>
+    <string name="overlay_caption">To start navigation straight from the watch, Steer needs permission to open apps from the background. Without it you\'ll get a tap-to-launch notification instead.</string>
+    <string name="nav_launch_title">Navigate to %1$s</string>
+    <string name="nav_launch_body">Tap to start navigation</string>
+    <string name="nav_launch_channel">Start navigation from watch</string>
     <string name="section_speed">Speed</string>
     <string name="section_appearance">Watch appearance</string>
     <string name="units_label">Distance units</string>

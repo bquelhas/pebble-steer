@@ -20,6 +20,16 @@ class WatchCommandReceiver : PebbleKit.PebbleDataReceiver(NavKeys.WATCH_UUID) {
         // Always ack first so the watch isn't left waiting.
         PebbleKit.sendAckToPebble(context, transactionId)
 
+        // Launch-time sync: the watchapp only keeps favorites in RAM, so a fresh launch shows an
+        // empty menu until the phone re-pushes. When the watch asks (NAV_REQUEST_FAVS) we reply with
+        // a full favorites burst. Handled here because this receiver is alive whenever the
+        // notification listener is (i.e. essentially always), no foreground app needed.
+        if (data.getUnsignedIntegerAsLong(NavKeys.NAV_REQUEST_FAVS) != null) {
+            Log.i(TAG, "watch requested favorites -> resyncing")
+            PebbleEmitter.sendFavorites(context)
+            return
+        }
+
         val idx = data.getUnsignedIntegerAsLong(NavKeys.NAV_TRIGGER_ROUTE)?.toInt() ?: return
         // Debounce: the watch may resend on a flaky link; ignore repeats of the same pick.
         val now = SystemClock.elapsedRealtime()
@@ -37,12 +47,11 @@ class WatchCommandReceiver : PebbleKit.PebbleDataReceiver(NavKeys.WATCH_UUID) {
     }
 
     private fun launchFavorite(context: Context, fav: Favorite) {
-        // Prefer a concrete navigator intent; fall back to a generic geo: intent.
-        val intents = NavLauncher.intentsFor(context, fav.query)
-        val intent = intents.firstOrNull()?.second ?: NavLauncher.genericGeoIntent(fav.query)
-        // Started from a background context (the watch press); NEW_TASK is required and some
-        // OEMs may still gate background activity starts — acceptable for a companion trigger.
-        NavLauncher.launch(context, intent)
+        // Started from a background context (the watch press). Android's BAL policy blocks a plain
+        // background startActivity, so launchForWatch honors the preferred navigator, uses the
+        // overlay (SYSTEM_ALERT_WINDOW) BAL exemption when granted, and otherwise falls back to a
+        // tap-to-launch notification.
+        NavLauncher.launchForWatch(context, fav.label, fav.query)
     }
 
     companion object {

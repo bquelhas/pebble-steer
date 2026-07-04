@@ -13,6 +13,7 @@ object NavPrefs {
     private const val KEY_SPEED_ALERT = "speed_alert"
     private const val KEY_SPEED_LIMIT = "speed_limit"
     private const val KEY_UNITS = "units"
+    private const val KEY_NAV_APP = "nav_app"
 
     /** Default watch background = the red used on-watch (NAV_SCREEN_BG #ff4b49). */
     const val DEFAULT_BG_COLOR = 0xFF4B49
@@ -103,5 +104,18 @@ object NavPrefs {
 
     fun setUnitSystem(context: Context, units: UnitSystem) {
         prefs(context).edit().putInt(KEY_UNITS, units.ordinal).apply()
+    }
+
+    /**
+     * Which navigator opens when a favorite is picked on the watch. Default [NavApp.AUTO] —
+     * the first installed supported app (Maps preferred). See [NavLauncher.launchForWatch].
+     */
+    fun getNavApp(context: Context): NavApp {
+        val ord = prefs(context).getInt(KEY_NAV_APP, NavApp.AUTO.ordinal)
+        return NavApp.entries.getOrElse(ord) { NavApp.AUTO }
+    }
+
+    fun setNavApp(context: Context, app: NavApp) {
+        prefs(context).edit().putInt(KEY_NAV_APP, app.ordinal).apply()
     }
 }
