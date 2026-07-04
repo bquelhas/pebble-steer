@@ -112,8 +112,8 @@ object MockNavEmitter {
         val mgr = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (mgr.getNotificationChannel(CHANNEL_ID) != null) return
         val ch = NotificationChannel(
-            CHANNEL_ID, "Navegação (mock)", NotificationManager.IMPORTANCE_LOW
-        ).apply { description = "Notificação de navegação falsa para debug" }
+            CHANNEL_ID, "Navigation (mock)", NotificationManager.IMPORTANCE_LOW
+        ).apply { description = "Mock navigation notification for debugging" }
         mgr.createNotificationChannel(ch)
     }
 

@@ -39,7 +39,7 @@ class DeveloperActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.btnMock).setOnClickListener {
-            val mock = NaviData(Direction.LEFT, "300 m — Vire à esquerda na Rua da Paz", "Good")
+            val mock = NaviData(Direction.LEFT, "300 m — Turn left onto Rua da Paz", "Good")
             PebbleEmitter.sendNav(applicationContext, mock)
             Toast.makeText(this, getString(R.string.mock_sent), Toast.LENGTH_SHORT).show()
         }
