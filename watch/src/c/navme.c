@@ -125,6 +125,10 @@ static uint8_t s_fav_count = 0;
 static Window *s_favorites_window = NULL;
 static MenuLayer *s_favorites_menu_layer = NULL;
 
+static Window *s_mode_window = NULL;
+static MenuLayer *s_mode_menu_layer = NULL;
+static uint8_t s_pending_fav_index = 0;
+
 static const uint32_t s_pdc_resource_ids[] = {
   RESOURCE_ID_PDC_ICON_0, RESOURCE_ID_PDC_ICON_1, RESOURCE_ID_PDC_ICON_2, RESOURCE_ID_PDC_ICON_3,
   RESOURCE_ID_PDC_ICON_4, RESOURCE_ID_PDC_ICON_5, RESOURCE_ID_PDC_ICON_6, RESOURCE_ID_PDC_ICON_7,
@@ -1980,28 +1984,121 @@ static void prv_back_click_handler(ClickRecognizerRef recognizer, void *context)
   window_stack_pop(true);
 }
 
+static int16_t prv_get_cell_height(MenuLayer *menu_layer, MenuIndex *cell_index, void *context);
+
 static void prv_fav_menu_select_callback(int index, void *context) {
   if (s_fav_count == 0) {
     return;
   }
   APP_LOG(APP_LOG_LEVEL_INFO, "Selected favorite index: %d (%s)", index, s_favorites[index].name);
   
-  // Send NAV_TRIGGER_ROUTE to the phone
+  s_pending_fav_index = index;
+  
+  if (s_mode_window) {
+    window_stack_push(s_mode_window, true);
+  }
+}
+
+static uint16_t prv_mode_get_num_rows(MenuLayer *menu_layer, uint16_t section_index, void *context) {
+  return 4;
+}
+
+static void prv_mode_draw_row(GContext *ctx, const Layer *cell_layer, MenuIndex *cell_index, void *context) {
+  GRect bounds = layer_get_bounds(cell_layer);
+  bool is_highlighted = menu_cell_layer_is_highlighted(cell_layer);
+  
+  GColor bg_resolved = prv_resolve_bg_color(s_bg_color);
+  GColor fg_color = prv_distance_fg_for_bg(bg_resolved);
+  
+  if (is_highlighted) {
+    graphics_context_set_fill_color(ctx, fg_color);
+    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+    graphics_context_set_text_color(ctx, bg_resolved);
+  } else {
+    graphics_context_set_fill_color(ctx, bg_resolved);
+    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+    graphics_context_set_text_color(ctx, fg_color);
+  }
+  
+  const char *text = "";
+  uint32_t placeholder_res_id = 0;
+  
+  switch (cell_index->row) {
+    case 0:
+      text = prv_tr("Car", "Carro");
+      placeholder_res_id = RESOURCE_ID_IMAGE_FAV_102; // Waze / Car placeholder
+      break;
+    case 1:
+      text = prv_tr("Bicycle", "Bicicleta");
+      placeholder_res_id = RESOURCE_ID_IMAGE_FAV_83;  // Sports placeholder
+      break;
+    case 2:
+      text = prv_tr("Walk", "A pé");
+      placeholder_res_id = RESOURCE_ID_IMAGE_FAV_85;  // Steps placeholder
+      break;
+    case 3:
+      text = prv_tr("Transit", "Transporte");
+      placeholder_res_id = RESOURCE_ID_IMAGE_FAV_0;   // Pin placeholder
+      break;
+  }
+  
+  GRect text_bounds = GRect(40, (bounds.size.h - 26) / 2, bounds.size.w - 50, 26);
+  
+  // Draw placeholder icon
+  GBitmap *bmp = gbitmap_create_with_resource(placeholder_res_id);
+  if (bmp) {
+    graphics_context_set_compositing_mode(ctx, GCompOpSet);
+    graphics_draw_bitmap_in_rect(ctx, bmp, GRect(8, 9, 25, 25));
+    gbitmap_destroy(bmp);
+  }
+  
+  GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+  graphics_draw_text(ctx, text, font, text_bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+}
+
+static void prv_mode_select_click(MenuLayer *menu_layer, MenuIndex *cell_index, void *context) {
+  uint8_t mode_index = cell_index->row;
+  
   DictionaryIterator *iter;
   app_message_outbox_begin(&iter);
   if (iter) {
-    dict_write_uint8(iter, MESSAGE_KEY_NAV_TRIGGER_ROUTE, index);
+    dict_write_uint8(iter, MESSAGE_KEY_NAV_TRIGGER_ROUTE, s_pending_fav_index);
+    dict_write_uint8(iter, MESSAGE_KEY_NAV_ROUTE_MODE, mode_index);
     app_message_outbox_send();
   }
   
-  // Show starting route on the screen and close favorites window
   snprintf(s_street_text, sizeof(s_street_text), "%s",
            prv_tr("Starting route...", "Iniciando rota..."));
   prv_update_ui();
   
-  if (s_favorites_window) {
-    window_stack_pop(true);
-  }
+  window_stack_pop(false); // Pop mode picker window
+  window_stack_pop(true);  // Pop favorites window with animation
+}
+
+static void prv_mode_window_load(Window *window) {
+  Layer *window_layer = window_get_root_layer(window);
+  GRect bounds = layer_get_bounds(window_layer);
+  
+  s_mode_menu_layer = menu_layer_create(bounds);
+  menu_layer_set_callbacks(s_mode_menu_layer, NULL, (MenuLayerCallbacks) {
+    .get_num_rows = prv_mode_get_num_rows,
+    .get_cell_height = prv_get_cell_height,
+    .draw_row = prv_mode_draw_row,
+    .select_click = prv_mode_select_click,
+  });
+  
+  GColor bg_resolved = prv_resolve_bg_color(s_bg_color);
+  GColor fg_color = prv_distance_fg_for_bg(bg_resolved);
+  menu_layer_set_normal_colors(s_mode_menu_layer, bg_resolved, fg_color);
+  menu_layer_set_highlight_colors(s_mode_menu_layer, fg_color, bg_resolved);
+  
+  menu_layer_set_click_config_onto_window(s_mode_menu_layer, window);
+  layer_add_child(window_layer, menu_layer_get_layer(s_mode_menu_layer));
+}
+
+static void prv_mode_window_unload(Window *window) {
+  menu_layer_destroy(s_mode_menu_layer);
+  s_mode_menu_layer = NULL;
 }
 
 static uint16_t prv_get_num_rows(MenuLayer *menu_layer, uint16_t section_index, void *context) {
@@ -2220,6 +2317,12 @@ static void prv_init(void) {
     .unload = prv_favorites_window_unload,
   });
 
+  s_mode_window = window_create();
+  window_set_window_handlers(s_mode_window, (WindowHandlers) {
+    .load = prv_mode_window_load,
+    .unload = prv_mode_window_unload,
+  });
+
   // Open AppMessage inbox and outbox
   app_message_register_inbox_received(inbox_received_handler);
   app_message_register_inbox_dropped(inbox_dropped_handler);
@@ -2260,6 +2363,9 @@ static void prv_deinit(void) {
   window_destroy(s_window);
   if (s_favorites_window) {
     window_destroy(s_favorites_window);
+  }
+  if (s_mode_window) {
+    window_destroy(s_mode_window);
   }
 }
 
