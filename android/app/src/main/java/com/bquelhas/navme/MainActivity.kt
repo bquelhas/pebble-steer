@@ -509,25 +509,6 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun navigateTo(fav: Favorite) {
-        val options = NavLauncher.intentsFor(applicationContext, fav.query)
-        when {
-            options.isEmpty() ->
-                NavLauncher.launch(applicationContext, NavLauncher.genericGeoIntent(fav.query))
-            options.size == 1 ->
-                NavLauncher.launch(applicationContext, options[0].second)
-            else -> {
-                val names = options.map { it.first }.toTypedArray()
-                AlertDialog.Builder(this)
-                    .setTitle(R.string.fav_choose_nav)
-                    .setItems(names) { _, which ->
-                        NavLauncher.launch(applicationContext, options[which].second)
-                    }
-                    .show()
-            }
-        }
-    }
-
     private fun confirmDeleteFavorite(index: Int, fav: Favorite) {
         AlertDialog.Builder(this)
             .setTitle(fav.label)
