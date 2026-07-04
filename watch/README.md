@@ -3,8 +3,8 @@
 Steer mirrors turn-by-turn navigation from your phone onto a Pebble watch:
 the next maneuver icon, distance, street/instruction text and ETA. It is the
 watch half of a two-part project — the
-[Steer companion Android app](https://github.com/bquelhas/steer-companion)
-reads navigation from your map app and forwards it here.
+[Steer companion Android app](../android) reads navigation from your map app
+and forwards it here.
 
 Built with the Pebble SDK for **aplite, basalt, chalk, diorite and emery**
 (Pebble Time 2 is the main target).

@@ -2,7 +2,7 @@
 
 Steer's phone half. It reads turn-by-turn navigation from your map app's
 notifications and forwards each maneuver to a **Pebble** watch running the
-[Steer watchapp](https://github.com/bquelhas/steer): next-turn icon,
+[Steer watchapp](../watch): next-turn icon,
 distance, street/instruction, ETA and an over-limit speed alert.
 
 - **Package / app id:** `com.bquelhas.navme` (display name "Steer").
@@ -82,15 +82,14 @@ adb -s <phone-ip>:<port> install -r app/build/outputs/apk/debug/app-debug.apk
 The APK can ship the watch build so users install both together. The
 `bundleWatchPbw` Gradle task copies the watch's compiled `.pbw` into
 `app/src/main/assets/steer.pbw` before assets are merged. It looks for the
-watch project as a **sibling checkout**:
+watch build output in the sibling `watch/` directory of the monorepo:
 
 ```
-../../projetos/Nav-app/build/Nav-app.pbw     (relative to this repo)
+../watch/build/Nav-app.pbw     (relative to the android/ project root)
 ```
 
-Adjust that path in `app/build.gradle.kts` to wherever you cloned the
-[watch repo](https://github.com/bquelhas/steer), run `pebble build`
-there, then rebuild the APK. If the `.pbw` is absent the task is skipped and
+Adjust that path in `app/build.gradle.kts` if your layout differs, run
+`pebble build` in [`../watch`](../watch), then rebuild the APK. If the `.pbw` is absent the task is skipped and
 the "install watchapp" button simply reports it's not bundled — the phone app
 still builds and runs.
 

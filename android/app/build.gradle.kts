@@ -42,7 +42,8 @@ kotlin {
 // hand it to the Pebble / Core Devices app for install ("o pbw que vai com o apk"). The file
 // is copied from the watch project's build output before assets are merged; if the watch
 // hasn't been built yet the step is skipped gracefully instead of failing the Android build.
-val watchPbw = file("${rootProject.projectDir}/../../projetos/Nav-app/build/Nav-app.pbw")
+// Monorepo layout: the watch project is the sibling ../watch directory.
+val watchPbw = file("${rootProject.projectDir}/../watch/build/Nav-app.pbw")
 val bundleWatchPbw = tasks.register<Copy>("bundleWatchPbw") {
     from(watchPbw)
     into(layout.projectDirectory.dir("src/main/assets"))

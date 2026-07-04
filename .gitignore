@@ -1,0 +1,4 @@
+# OS / editor junk (per-component ignores live in watch/ and android/)
+.DS_Store
+*.log
+*.swp
