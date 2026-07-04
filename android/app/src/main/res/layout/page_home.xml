@@ -187,14 +187,50 @@
             android:textStyle="bold"
             android:textAppearance="?attr/textAppearanceTitleSmall" />
 
-        <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/switchSpeedometer"
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-condensed"
+            android:text="@string/speedometer_label"
+            android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:fontFamily="sans-serif-condensed"
+            android:text="@string/speedometer_caption"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <com.google.android.material.checkbox.MaterialCheckBox
+            android:id="@+id/chkSpeedCar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-condensed"
+            android:text="@string/mode_car" />
+
+        <com.google.android.material.checkbox.MaterialCheckBox
+            android:id="@+id/chkSpeedBike"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-condensed"
+            android:text="@string/mode_bicycle" />
+
+        <com.google.android.material.checkbox.MaterialCheckBox
+            android:id="@+id/chkSpeedWalk"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-condensed"
+            android:text="@string/mode_pedestrian" />
+
+        <com.google.android.material.checkbox.MaterialCheckBox
+            android:id="@+id/chkSpeedTransit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
             android:fontFamily="sans-serif-condensed"
-            android:textAppearance="?attr/textAppearanceBodyLarge"
-            android:text="@string/speedometer_label" />
+            android:text="@string/mode_transit" />
 
         <com.google.android.material.materialswitch.MaterialSwitch
             android:id="@+id/switchSpeedAlert"

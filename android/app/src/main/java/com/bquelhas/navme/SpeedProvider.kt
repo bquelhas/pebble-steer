@@ -49,8 +49,8 @@ object SpeedProvider {
     /** Begins listening for GPS fixes and relaying speed. No-op if already running. */
     fun start(context: Context) {
         if (running) return
-        if (!NavPrefs.isSpeedometer(context) && !NavPrefs.isSpeedAlert(context)) {
-            Log.d(TAG, "start skipped: speedometer + alert both off")
+        if (!NavPrefs.isAnySpeedometer(context) && !NavPrefs.isSpeedAlert(context)) {
+            Log.d(TAG, "start skipped: speedometer (all modes) + alert both off")
             return
         }
         if (!hasLocationPermission(context)) {
@@ -132,7 +132,8 @@ object SpeedProvider {
     }
 
     private fun maybeSendSpeed(context: Context, kmh: Int) {
-        if (!NavPrefs.isSpeedometer(context)) return
+        // Per-mode gate: only stream speed if the current session's travel mode wants it.
+        if (!NavPrefs.isSpeedometerForMode(context, NavPrefs.getActiveMode(context))) return
         if (kmh == lastSentSpeed) return
         lastSentSpeed = kmh
         PebbleEmitter.sendSpeed(context, kmh)

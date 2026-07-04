@@ -105,6 +105,8 @@ class NavNotificationListenerService : NotificationListenerService() {
             lastSent = null
             navActive = false
             SpeedProvider.stop(applicationContext)
+            // Session over: forget the watch-chosen travel mode so a manual route defaults to CAR.
+            NavPrefs.setActiveMode(applicationContext, TravelMode.CAR)
             PebbleEmitter.sendCancel(applicationContext)
         }
     }

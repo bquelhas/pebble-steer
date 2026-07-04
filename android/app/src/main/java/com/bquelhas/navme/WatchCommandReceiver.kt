@@ -36,22 +36,29 @@ class WatchCommandReceiver : PebbleKit.PebbleDataReceiver(NavKeys.WATCH_UUID) {
         if (idx == lastIndex && now - lastAt < DEBOUNCE_MS) return
         lastIndex = idx; lastAt = now
 
+        // Travel mode chosen on the watch (0 car by default if an older watchapp omits it).
+        val mode = TravelMode.fromId(
+            data.getUnsignedIntegerAsLong(NavKeys.NAV_ROUTE_MODE)?.toInt() ?: 0
+        )
+        // Remember it for the session so SpeedProvider can gate the speedometer per mode.
+        NavPrefs.setActiveMode(context, mode)
+
         val favs = FavoritesStore.all(context)
         val fav = favs.getOrNull(idx)
         if (fav == null) {
             Log.w(TAG, "trigger for unknown favorite index $idx (have ${favs.size})")
             return
         }
-        Log.i(TAG, "watch triggered favorite #$idx '${fav.label}' -> ${fav.query}")
-        launchFavorite(context, fav)
+        Log.i(TAG, "watch triggered favorite #$idx '${fav.label}' (${mode.name}) -> ${fav.query}")
+        launchFavorite(context, fav, mode)
     }
 
-    private fun launchFavorite(context: Context, fav: Favorite) {
+    private fun launchFavorite(context: Context, fav: Favorite, mode: TravelMode) {
         // Started from a background context (the watch press). Android's BAL policy blocks a plain
         // background startActivity, so launchForWatch honors the preferred navigator, uses the
         // overlay (SYSTEM_ALERT_WINDOW) BAL exemption when granted, and otherwise falls back to a
         // tap-to-launch notification.
-        NavLauncher.launchForWatch(context, fav.label, fav.query)
+        NavLauncher.launchForWatch(context, fav.label, fav.query, mode)
     }
 
     companion object {

@@ -229,11 +229,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupSpeedControls(root: View) {
-        val speedometer = root.findViewById<SwitchCompat>(R.id.switchSpeedometer)
-        speedometer.isChecked = NavPrefs.isSpeedometer(applicationContext)
-        speedometer.setOnCheckedChangeListener { _, checked ->
-            NavPrefs.setSpeedometer(applicationContext, checked)
-            if (checked) ensureLocationPermission()
+        // Per-mode speedometer: pick which travel modes show current speed on the watch.
+        val speedModeBoxes = listOf(
+            R.id.chkSpeedCar to TravelMode.CAR,
+            R.id.chkSpeedBike to TravelMode.BICYCLE,
+            R.id.chkSpeedWalk to TravelMode.PEDESTRIAN,
+            R.id.chkSpeedTransit to TravelMode.TRANSIT,
+        )
+        speedModeBoxes.forEach { (id, mode) ->
+            val box = root.findViewById<MaterialCheckBox>(id)
+            box.isChecked = NavPrefs.isSpeedometerForMode(applicationContext, mode)
+            box.setOnCheckedChangeListener { _, checked ->
+                NavPrefs.setSpeedometerForMode(applicationContext, mode, checked)
+                if (checked) ensureLocationPermission()
+                updateSpeedControls()
+            }
         }
 
         val alert = root.findViewById<SwitchCompat>(R.id.switchSpeedAlert)
@@ -292,7 +302,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateSpeedControls() {
-        val wantsSpeed = NavPrefs.isSpeedometer(applicationContext) || NavPrefs.isSpeedAlert(applicationContext)
+        val wantsSpeed = NavPrefs.isAnySpeedometer(applicationContext) || NavPrefs.isSpeedAlert(applicationContext)
         val hasPerm = SpeedProvider.hasLocationPermission(applicationContext)
         btnGrantLocation?.visibility = if (wantsSpeed && !hasPerm) View.VISIBLE else View.GONE
     }
@@ -423,7 +433,6 @@ class MainActivity : AppCompatActivity() {
         val checkedId = when (NavPrefs.getNavApp(applicationContext)) {
             NavApp.AUTO -> R.id.navAppAuto
             NavApp.GOOGLE_MAPS -> R.id.navAppMaps
-            NavApp.WAZE -> R.id.navAppWaze
             NavApp.OSMAND -> R.id.navAppOsmand
         }
         group.check(checkedId)
@@ -431,7 +440,6 @@ class MainActivity : AppCompatActivity() {
             if (!isChecked) return@addOnButtonCheckedListener
             val app = when (buttonId) {
                 R.id.navAppMaps -> NavApp.GOOGLE_MAPS
-                R.id.navAppWaze -> NavApp.WAZE
                 R.id.navAppOsmand -> NavApp.OSMAND
                 else -> NavApp.AUTO
             }

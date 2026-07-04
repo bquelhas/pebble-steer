@@ -60,15 +60,6 @@
                 android:text="@string/nav_app_maps" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/navAppWaze"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-condensed"
-                android:text="@string/nav_app_waze" />
-
-            <com.google.android.material.button.MaterialButton
                 android:id="@+id/navAppOsmand"
                 style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="0dp"

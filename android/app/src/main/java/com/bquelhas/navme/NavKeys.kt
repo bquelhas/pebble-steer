@@ -55,5 +55,9 @@ object NavKeys {
                                     // speed-limit sign. Sent together with NAV_SPEED_ALERT. The value
                                     // is either the user's manual limit or, in OSM mode, the current
                                     // road's real maxspeed (falling back to the manual limit).
+    const val NAV_ROUTE_MODE = 19   // uint8 (watch->phone): travel mode chosen on the watch when a
+                                    // favorite is launched, sent alongside NAV_TRIGGER_ROUTE. 0 car,
+                                    // 1 bicycle, 2 pedestrian, 3 transit (see TravelMode). The phone
+                                    // appends the matching per-app routing parameter when launching.
     const val NAV_CANCEL = 99       // uint8: navigation stopped / clear display
 }

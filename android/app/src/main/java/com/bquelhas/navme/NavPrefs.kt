@@ -9,7 +9,8 @@ object NavPrefs {
     private const val KEY_BG_COLOR = "bg_color"
     private const val KEY_VIBE_ON_TURN = "vibe_on_turn"
     private const val KEY_DEBUG_TESTS = "debug_tests"
-    private const val KEY_SPEEDOMETER = "speedometer"
+    private const val KEY_SPEEDOMETER_PREFIX = "speedometer_" // + TravelMode.name (per-mode)
+    private const val KEY_ACTIVE_MODE = "active_mode"
     private const val KEY_SPEED_ALERT = "speed_alert"
     private const val KEY_SPEED_LIMIT = "speed_limit"
     private const val KEY_SPEED_LIMIT_OSM = "speed_limit_osm"
@@ -65,16 +66,34 @@ object NavPrefs {
     }
 
     /**
-     * Whether the watch speedometer is on — when true, [SpeedProvider] reads the phone GPS
-     * while navigating and streams the current speed (km/h) to the watch (NAV_SPEED).
-     * Default OFF: it needs the location permission and only matters once Bruno wires the
-     * on-watch speed display (STEER_SHOW_SPEEDOMETER).
+     * Whether the watch speedometer is on for a given [TravelMode] — when true, [SpeedProvider]
+     * reads the phone GPS while navigating in that mode and streams the current speed (km/h) to the
+     * watch (NAV_SPEED). Chosen per mode so e.g. cycling shows speed while driving doesn't. Defaults:
+     * bicycle + pedestrian ON (speed matters there), car + transit OFF.
      */
-    fun isSpeedometer(context: Context): Boolean =
-        prefs(context).getBoolean(KEY_SPEEDOMETER, false)
+    fun isSpeedometerForMode(context: Context, mode: TravelMode): Boolean {
+        val default = mode == TravelMode.BICYCLE || mode == TravelMode.PEDESTRIAN
+        return prefs(context).getBoolean(KEY_SPEEDOMETER_PREFIX + mode.name, default)
+    }
 
-    fun setSpeedometer(context: Context, enabled: Boolean) {
-        prefs(context).edit().putBoolean(KEY_SPEEDOMETER, enabled).apply()
+    fun setSpeedometerForMode(context: Context, mode: TravelMode, enabled: Boolean) {
+        prefs(context).edit().putBoolean(KEY_SPEEDOMETER_PREFIX + mode.name, enabled).apply()
+    }
+
+    /** True when the speedometer is enabled for at least one travel mode (gates GPS streaming). */
+    fun isAnySpeedometer(context: Context): Boolean =
+        TravelMode.entries.any { isSpeedometerForMode(context, it) }
+
+    /**
+     * The travel mode of the current navigation session, set when a favourite is launched from the
+     * watch (NAV_ROUTE_MODE) and reset to [TravelMode.CAR] when navigation ends. Drives the per-mode
+     * speedometer gate — a route started manually (no watch mode) is treated as CAR.
+     */
+    fun getActiveMode(context: Context): TravelMode =
+        TravelMode.fromId(prefs(context).getInt(KEY_ACTIVE_MODE, TravelMode.CAR.id))
+
+    fun setActiveMode(context: Context, mode: TravelMode) {
+        prefs(context).edit().putInt(KEY_ACTIVE_MODE, mode.id).apply()
     }
 
     /**
