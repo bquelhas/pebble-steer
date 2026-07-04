@@ -69,6 +69,8 @@
     <string name="mock_nav_title">Navegação falsa (Maps)</string>
     <string name="mock_nav_caption">Mostra o ícone real do Google Maps numa notificação e passa-o pelo classificador (como nas notificações reais). Envia para o relógio a manobra que LEMOS — para auditar a leitura de cada ícone, um a um.</string>
     <string name="open_mock_nav">Navegação falsa (debug)</string>
+    <string name="test_speed_sign">Testar sinal de velocidade no relógio</string>
+    <string name="clear_speed_sign">Limpar sinal de velocidade</string>
     <string name="mock_dist_hint">Distância (ex.: 300 m)</string>
     <string name="mock_dist_default">300 m</string>
     <string name="mock_street_hint">Rua / instrução</string>

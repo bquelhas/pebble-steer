@@ -89,9 +89,18 @@
             style="@style/Widget.Material3.Button.TonalButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
+            android:layout_marginBottom="12dp"
             android:fontFamily="sans-serif-condensed"
             android:text="@string/open_mock_nav" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTestSpeedSign"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:fontFamily="sans-serif-condensed"
+            android:text="@string/test_speed_sign" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnInstallPbw"

@@ -560,6 +560,7 @@ class MainActivity : AppCompatActivity() {
             if (!isChecked) {
                 DebugCycler.stop(applicationContext)
                 MockNavEmitter.cancel(applicationContext)
+                clearSpeedSignTest()
                 updateDebugCycleButton()
             }
             setDebugControlsEnabled(isChecked)
@@ -573,6 +574,9 @@ class MainActivity : AppCompatActivity() {
         root.findViewById<Button>(R.id.btnMockNav).setOnClickListener {
             startActivity(Intent(this, MockNavActivity::class.java))
         }
+        val btnSign = root.findViewById<Button>(R.id.btnTestSpeedSign)
+        btnSign.setOnClickListener { toggleSpeedSignTest(btnSign) }
+        updateSpeedSignButton(btnSign)
         root.findViewById<Button>(R.id.btnInstallPbw).setOnClickListener {
             when {
                 !PbwInstaller.isBundled(applicationContext) ->
@@ -604,7 +608,7 @@ class MainActivity : AppCompatActivity() {
         val root = devRoot ?: return
         for (id in intArrayOf(
             R.id.btnMock, R.id.btnDebugCycle, R.id.btnMockNav,
-            R.id.btnIconPrev, R.id.btnIconNext,
+            R.id.btnTestSpeedSign, R.id.btnIconPrev, R.id.btnIconNext,
         )) {
             root.findViewById<Button>(id).isEnabled = enabled
         }
@@ -616,6 +620,36 @@ class MainActivity : AppCompatActivity() {
             if (DebugCycler.isRunning()) R.string.debug_cycle_stop
             else R.string.debug_cycle_start
         )
+    }
+
+    private var speedSignTestOn = false
+
+    private fun toggleSpeedSignTest(btn: Button) {
+        speedSignTestOn = !speedSignTestOn
+        PebbleEmitter.sendSpeedAlert(
+            applicationContext,
+            speedSignTestOn,
+            NavPrefs.getSpeedLimit(applicationContext),
+        )
+        updateSpeedSignButton(btn)
+    }
+
+    private fun updateSpeedSignButton(btn: Button) {
+        btn.text = getString(
+            if (speedSignTestOn) R.string.clear_speed_sign
+            else R.string.test_speed_sign
+        )
+    }
+
+    private fun clearSpeedSignTest() {
+        if (!speedSignTestOn) return
+        speedSignTestOn = false
+        PebbleEmitter.sendSpeedAlert(
+            applicationContext,
+            false,
+            NavPrefs.getSpeedLimit(applicationContext),
+        )
+        devRoot?.findViewById<Button>(R.id.btnTestSpeedSign)?.let { updateSpeedSignButton(it) }
     }
 
     private fun stepIcon(delta: Int, label: TextView, preview: ImageView) {
