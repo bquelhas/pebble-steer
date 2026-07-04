@@ -3,12 +3,24 @@
 Steer's phone half. It reads turn-by-turn navigation from your map app's
 notifications and forwards each maneuver to a **Pebble** watch running the
 [Steer watchapp](https://github.com/bquelhas/steer): next-turn icon,
-distance, street/instruction, ETA, current speed and an over-limit alert. It
-can also launch navigation to a favourite straight from the watch.
+distance, street/instruction, ETA and an over-limit speed alert.
 
 - **Package / app id:** `com.bquelhas.navme` (display name "Steer").
 - **Min SDK 24**, Material You (dynamic colours, follows system theme).
+- **Interface** in English or Portuguese (chosen from the device language).
 - **Licence:** MIT (see [LICENSE](LICENSE)); attribution in [CREDITS.md](CREDITS.md).
+
+### Compatible navigation apps
+
+Turn-by-turn guidance is read from **Google Maps**, **OsmAnd** (Play and
+free/F-Droid builds), **CoMaps** and **Organic Maps**. Waze can be *launched*
+to a favourite, but its notifications don't expose the maneuver, so a live Waze
+route can't be mirrored to the watch.
+
+### Planned / in progress
+
+- On-watch speedometer (the speed-limit alert already works).
+- Launching a favourite destination directly from the watch.
 
 ## How it works
 
