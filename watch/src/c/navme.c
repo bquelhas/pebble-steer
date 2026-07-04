@@ -598,38 +598,32 @@ static void prv_status_bar_update_proc(Layer *layer, GContext *ctx) {
 
 static void prv_speed_sign_update_proc(Layer *layer, GContext *ctx) {
   GRect b = layer_get_bounds(layer);
+  
+  // Fill the entire screen background with white (so the round sign floats on white)
+  graphics_context_set_fill_color(ctx, GColorWhite);
+  graphics_fill_rect(ctx, b, 0, GCornerNone);
+  
   GColor frame_color = PBL_IF_COLOR_ELSE(GColorDarkCandyAppleRed, GColorBlack);
   
-  #if defined(PBL_ROUND)
-    GPoint center = GPoint(b.size.w / 2, b.size.h / 2);
-    uint16_t outer_radius = b.size.w / 2;
-    uint16_t inner_radius = outer_radius - 18; // thick border touching edges
-    
-    graphics_context_set_fill_color(ctx, frame_color);
-    graphics_fill_circle(ctx, center, outer_radius);
-    
-    graphics_context_set_fill_color(ctx, GColorWhite);
-    graphics_fill_circle(ctx, center, inner_radius);
-    
-    int inner_w = (int)(inner_radius * 1.41);
-    GRect text_box = GRect(center.x - inner_w / 2, center.y - 30, inner_w, 60);
-  #else
-    graphics_context_set_fill_color(ctx, frame_color);
-    graphics_fill_rect(ctx, b, 0, GCornerNone);
-    
-    #if defined(PBL_PLATFORM_EMERY)
-      int thickness = 24;
-    #else
-      int thickness = 18;
-    #endif
-    
-    GRect inner_rect = GRect(thickness, thickness, b.size.w - 2 * thickness, b.size.h - 2 * thickness);
-    
-    graphics_context_set_fill_color(ctx, GColorWhite);
-    graphics_fill_rect(ctx, inner_rect, 0, GCornerNone);
-    
-    GRect text_box = GRect(inner_rect.origin.x, inner_rect.origin.y + (inner_rect.size.h - 60) / 2, inner_rect.size.w, 60);
-  #endif
+  // Calculate center and radius (always round, does not touch edges)
+  GPoint center = GPoint(b.size.w / 2, b.size.h / 2);
+  uint16_t max_diameter = b.size.w < b.size.h ? b.size.w : b.size.h;
+  uint16_t outer_radius = max_diameter / 2 - 6; // leaves 6px white border
+  uint16_t thickness = outer_radius / 6; // proportional border thickness
+  if (thickness < 10) thickness = 10;   // minimum thickness
+  uint16_t inner_radius = outer_radius - thickness;
+  
+  // Draw circular border
+  graphics_context_set_fill_color(ctx, frame_color);
+  graphics_fill_circle(ctx, center, outer_radius);
+  
+  // Draw white core inside
+  graphics_context_set_fill_color(ctx, GColorWhite);
+  graphics_fill_circle(ctx, center, inner_radius);
+  
+  // Compute text boundary box inside the core
+  int inner_w = (int)(inner_radius * 1.41);
+  GRect text_box = GRect(center.x - inner_w / 2, center.y - 30, inner_w, 60);
   
   char limit_buf[8];
   snprintf(limit_buf, sizeof(limit_buf), "%d", s_speed_limit);
@@ -647,6 +641,7 @@ static void prv_speed_sign_update_proc(Layer *layer, GContext *ctx) {
   };
   
   int max_allowed_w = (int)(text_box.size.w * 0.85);
+  int h = 20; // default height fallback
   
   for (size_t i = 0; i < sizeof(font_keys)/sizeof(font_keys[0]); i++) {
     GFont f = fonts_get_system_font(font_keys[i]);
@@ -654,25 +649,25 @@ static void prv_speed_sign_update_proc(Layer *layer, GContext *ctx) {
                                                       GTextOverflowModeWordWrap, GTextAlignmentCenter);
     if (size.w <= max_allowed_w) {
       chosen_font = f;
-      int h = 32;
       if (i == 0) h = 42;
       else if (i == 1) h = 38;
       else if (i == 2) h = 36;
       else if (i == 3) h = 32;
       else if (i == 4) h = 28;
       else h = 20;
-      
-      #if defined(PBL_ROUND)
-        text_box.origin.y = center.y - h / 2 - 3;
-      #else
-        text_box.origin.y = inner_rect.origin.y + (inner_rect.size.h - h) / 2 - 3;
-      #endif
-      text_box.size.h = h + 10;
       break;
     }
   }
   
-  graphics_draw_text(ctx, limit_buf, chosen_font, text_box, 
+  // Position the speed limit number (shifted up slightly to make room for km/h)
+  GRect num_rect = GRect(center.x - inner_w / 2, center.y - h / 2 - 8, inner_w, h + 4);
+  graphics_draw_text(ctx, limit_buf, chosen_font, num_rect, 
+                     GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  
+  // Position and draw the "km/h" unit centered below the number
+  GRect unit_rect = GRect(center.x - inner_w / 2, center.y + h / 2 - 6, inner_w, 18);
+  GFont unit_font = fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD);
+  graphics_draw_text(ctx, "km/h", unit_font, unit_rect, 
                      GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
