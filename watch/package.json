@@ -43,6 +43,7 @@
       "NAV_SPEED": 15,
       "NAV_REQUEST_FAVS": 16,
       "NAV_FAV_ICON": 17,
+      "NAV_SPEED_LIMIT": 18,
       "NAV_CANCEL": 99
     },
     "resources": {

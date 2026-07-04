@@ -80,6 +80,7 @@ typedef enum {
 static Window *s_window;
 static Layer *s_panel_layer;
 static Layer *s_status_bar_layer;
+static Layer *s_speed_sign_layer;
 
 // State Variables
 static char s_distance_text[32] = "";
@@ -89,6 +90,7 @@ static char s_gps_text[32] = "GPS: ---";
 static int s_maneuver_index = -1;  // -1 means no active maneuver, show chevron
 static bool s_vibe_on_turn = true;
 static bool s_speed_alert_active = false;
+static uint8_t s_speed_limit = 0;
 static int s_current_speed = -1;   // current speed in km/h from the phone GPS; -1 = unknown
 // Speedometer display placement is still TBD (Bruno designs the layout). The value is
 // plumbed + stored now; flip this to 1 once the on-watch layout is decided.
@@ -552,20 +554,6 @@ static void prv_bg_update_proc(Layer *layer, GContext *ctx) {
 static void prv_status_bar_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   
-  if (s_speed_alert_active) {
-    GColor bg_color = prv_distance_fg_for_bg(prv_top_bg());
-    GColor fg_color = prv_top_bg();
-    
-    graphics_context_set_fill_color(ctx, bg_color);
-    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
-    
-    graphics_context_set_text_color(ctx, fg_color);
-    GFont font = fonts_get_system_font(bounds.size.w > 144 ? FONT_KEY_GOTHIC_14_BOLD : FONT_KEY_GOTHIC_14);
-    graphics_draw_text(ctx, "LIMIT EXCEEDED!", font, GRect(0, (bounds.size.h - 16) / 2 - 1, bounds.size.w, 16),
-                       GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-    return;
-  }
-  
   GColor text_color = prv_distance_fg_for_bg(prv_top_bg());
   graphics_context_set_text_color(ctx, text_color);
   
@@ -607,6 +595,86 @@ static void prv_status_bar_update_proc(Layer *layer, GContext *ctx) {
 }
 
 
+
+static void prv_speed_sign_update_proc(Layer *layer, GContext *ctx) {
+  GRect b = layer_get_bounds(layer);
+  GColor frame_color = PBL_IF_COLOR_ELSE(GColorDarkCandyAppleRed, GColorBlack);
+  
+  #if defined(PBL_ROUND)
+    GPoint center = GPoint(b.size.w / 2, b.size.h / 2);
+    uint16_t outer_radius = b.size.w / 2;
+    uint16_t inner_radius = outer_radius - 18; // thick border touching edges
+    
+    graphics_context_set_fill_color(ctx, frame_color);
+    graphics_fill_circle(ctx, center, outer_radius);
+    
+    graphics_context_set_fill_color(ctx, GColorWhite);
+    graphics_fill_circle(ctx, center, inner_radius);
+    
+    int inner_w = (int)(inner_radius * 1.41);
+    GRect text_box = GRect(center.x - inner_w / 2, center.y - 30, inner_w, 60);
+  #else
+    graphics_context_set_fill_color(ctx, frame_color);
+    graphics_fill_rect(ctx, b, 0, GCornerNone);
+    
+    #if defined(PBL_PLATFORM_EMERY)
+      int thickness = 24;
+    #else
+      int thickness = 18;
+    #endif
+    
+    GRect inner_rect = GRect(thickness, thickness, b.size.w - 2 * thickness, b.size.h - 2 * thickness);
+    
+    graphics_context_set_fill_color(ctx, GColorWhite);
+    graphics_fill_rect(ctx, inner_rect, 0, GCornerNone);
+    
+    GRect text_box = GRect(inner_rect.origin.x, inner_rect.origin.y + (inner_rect.size.h - 60) / 2, inner_rect.size.w, 60);
+  #endif
+  
+  char limit_buf[8];
+  snprintf(limit_buf, sizeof(limit_buf), "%d", s_speed_limit);
+  
+  graphics_context_set_text_color(ctx, GColorBlack);
+  
+  GFont chosen_font = fonts_get_system_font(FONT_KEY_LECO_20_BOLD_NUMBERS);
+  const char* font_keys[] = {
+    FONT_KEY_LECO_42_NUMBERS,
+    FONT_KEY_LECO_38_BOLD_NUMBERS,
+    FONT_KEY_LECO_36_BOLD_NUMBERS,
+    FONT_KEY_LECO_32_BOLD_NUMBERS,
+    FONT_KEY_LECO_28_LIGHT_NUMBERS,
+    FONT_KEY_LECO_20_BOLD_NUMBERS
+  };
+  
+  int max_allowed_w = (int)(text_box.size.w * 0.85);
+  
+  for (size_t i = 0; i < sizeof(font_keys)/sizeof(font_keys[0]); i++) {
+    GFont f = fonts_get_system_font(font_keys[i]);
+    GSize size = graphics_text_layout_get_content_size(limit_buf, f, text_box, 
+                                                      GTextOverflowModeWordWrap, GTextAlignmentCenter);
+    if (size.w <= max_allowed_w) {
+      chosen_font = f;
+      int h = 32;
+      if (i == 0) h = 42;
+      else if (i == 1) h = 38;
+      else if (i == 2) h = 36;
+      else if (i == 3) h = 32;
+      else if (i == 4) h = 28;
+      else h = 20;
+      
+      #if defined(PBL_ROUND)
+        text_box.origin.y = center.y - h / 2 - 3;
+      #else
+        text_box.origin.y = inner_rect.origin.y + (inner_rect.size.h - h) / 2 - 3;
+      #endif
+      text_box.size.h = h + 10;
+      break;
+    }
+  }
+  
+  graphics_draw_text(ctx, limit_buf, chosen_font, text_box, 
+                     GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+}
 
 static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   if (s_status_bar_layer) {
@@ -1663,6 +1731,11 @@ static void prv_update_ui(void) {
     }
   }
 
+  if (s_speed_sign_layer) {
+    layer_set_hidden(s_speed_sign_layer, !s_speed_alert_active);
+    layer_mark_dirty(s_speed_sign_layer);
+  }
+
   prv_update_backlight();
 }
 
@@ -1797,6 +1870,11 @@ static void inbox_received_handler(DictionaryIterator *iterator, void *context) 
 
   // Check speed warning alert
   Tuple *speed_alert_t = dict_find(iterator, MESSAGE_KEY_NAV_SPEED_ALERT);
+  Tuple *speed_limit_t = dict_find(iterator, MESSAGE_KEY_NAV_SPEED_LIMIT);
+  if (speed_limit_t) {
+    s_speed_limit = speed_limit_t->value->uint8;
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Parsed NAV_SPEED_LIMIT: %d", s_speed_limit);
+  }
   if (speed_alert_t) {
     bool new_alert = (speed_alert_t->value->uint8 != 0);
     if (new_alert != s_speed_alert_active) {
@@ -2055,6 +2133,12 @@ static void prv_window_load(Window *window) {
   layer_set_update_proc(s_panel_layer, prv_panel_update_proc);
   layer_add_child(window_layer, s_panel_layer);
 
+  // 3. Create Speed Sign Layer (covers entire window)
+  s_speed_sign_layer = layer_create(bounds);
+  layer_set_update_proc(s_speed_sign_layer, prv_speed_sign_update_proc);
+  layer_add_child(window_layer, s_speed_sign_layer);
+  layer_set_hidden(s_speed_sign_layer, true); // Hidden by default
+
   // Allocate s_forwarded_icon once at target size
   int dim = 50;
 #if defined(PBL_PLATFORM_EMERY)
@@ -2089,6 +2173,7 @@ static void prv_window_unload(Window *window) {
 
   layer_destroy(s_panel_layer);
   layer_destroy(s_status_bar_layer);
+  layer_destroy(s_speed_sign_layer);
 
   if (s_forwarded_icon) {
     gbitmap_destroy(s_forwarded_icon);
