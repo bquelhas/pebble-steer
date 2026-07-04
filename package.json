@@ -1,0 +1,267 @@
+{
+  "name": "steer",
+  "author": "aviation_hacker",
+  "version": "2.0.0",
+  "keywords": [
+    "pebble-app"
+  ],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "Steer",
+    "uuid": "1bdfe435-6a34-42d5-aed7-ace29fec1260",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "aplite",
+      "basalt",
+      "chalk",
+      "diorite",
+      "emery"
+    ],
+    "watchapp": {
+      "watchface": false,
+      "onlyShownOnCommunication": false,
+      "hiddenApp": false
+    },
+    "messageKeys": {
+      "NAV_TURN": 0,
+      "NAV_TEXT_BEGIN": 1,
+      "NAV_TEXT": 2,
+      "NAV_TEXT_END": 3,
+      "NAV_INVERT_COLOR": 4,
+      "NAV_GPS_ACCURACY": 5,
+      "NAV_ICON_BITMAP": 6,
+      "NAV_ETA": 7,
+      "NAV_BG_COLOR": 8,
+      "NAV_VIBE_ON_TURN": 9,
+      "NAV_SPEED_ALERT": 10,
+      "NAV_FAV_COUNT": 11,
+      "NAV_FAV_INDEX": 12,
+      "NAV_FAV_NAME": 13,
+      "NAV_TRIGGER_ROUTE": 14,
+      "NAV_SPEED": 15,
+      "NAV_CANCEL": 99
+    },
+    "resources": {
+      "media": [
+        {
+          "type": "bitmap",
+          "name": "IMAGE_MENU_ICON",
+          "file": "img/steer_icon.png",
+          "menuIcon": true
+        },
+        {
+          "type": "raw",
+          "name": "PDC_WAIT_ICON",
+          "file": "pebble_icons/pdc/steer_wait.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_0",
+          "file": "pebble_icons/pdc/00_ARRIVE.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_1",
+          "file": "pebble_icons/pdc/01_ARRIVE_LEFT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_2",
+          "file": "pebble_icons/pdc/02_ARRIVE_RIGHT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_3",
+          "file": "pebble_icons/pdc/03_DEPART.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_4",
+          "file": "pebble_icons/pdc/04_FORK_LEFT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_5",
+          "file": "pebble_icons/pdc/05_FORK_RIGHT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_6",
+          "file": "pebble_icons/pdc/06_GENERIC_MERGE.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_7",
+          "file": "pebble_icons/pdc/07_GEN_RBT_LEFT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_8",
+          "file": "pebble_icons/pdc/08_GEN_RBT_RIGHT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_9",
+          "file": "pebble_icons/pdc/09_LEFT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_10",
+          "file": "pebble_icons/pdc/10_RIGHT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_11",
+          "file": "pebble_icons/pdc/11_RAMP_LEFT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_12",
+          "file": "pebble_icons/pdc/12_RAMP_RIGHT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_13",
+          "file": "pebble_icons/pdc/13_RBT1_L.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_14",
+          "file": "pebble_icons/pdc/14_RBT2_L.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_15",
+          "file": "pebble_icons/pdc/15_RBT3_L.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_16",
+          "file": "pebble_icons/pdc/16_RBT4_L.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_17",
+          "file": "pebble_icons/pdc/17_RBT5_L.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_18",
+          "file": "pebble_icons/pdc/18_RBT6_L.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_19",
+          "file": "pebble_icons/pdc/19_RBT7_L.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_20",
+          "file": "pebble_icons/pdc/20_RBT8_L.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_21",
+          "file": "pebble_icons/pdc/21_RBT1_R.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_22",
+          "file": "pebble_icons/pdc/22_RBT2_R.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_23",
+          "file": "pebble_icons/pdc/23_RBT3_R.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_24",
+          "file": "pebble_icons/pdc/24_RBT4_R.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_25",
+          "file": "pebble_icons/pdc/25_RBT5_R.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_26",
+          "file": "pebble_icons/pdc/26_RBT6_R.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_27",
+          "file": "pebble_icons/pdc/27_RBT7_R.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_28",
+          "file": "pebble_icons/pdc/28_RBT8_R.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_29",
+          "file": "pebble_icons/pdc/29_RBT_EXIT_LEFT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_30",
+          "file": "pebble_icons/pdc/30_RBT_EXIT_RIGHT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_31",
+          "file": "pebble_icons/pdc/31_SHARP_LEFT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_32",
+          "file": "pebble_icons/pdc/32_SHARP_RIGHT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_33",
+          "file": "pebble_icons/pdc/33_SLIGHT_LEFT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_34",
+          "file": "pebble_icons/pdc/34_SLIGHT_RIGHT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_35",
+          "file": "pebble_icons/pdc/35_STRAIGHT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_36",
+          "file": "pebble_icons/pdc/36_UTURN_LEFT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_37",
+          "file": "pebble_icons/pdc/37_UTURN_RIGHT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_38",
+          "file": "pebble_icons/pdc/38_FERRY.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_39",
+          "file": "pebble_icons/pdc/39_KEEP_LEFT.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "PDC_ICON_40",
+          "file": "pebble_icons/pdc/40_KEEP_RIGHT.pdc"
+        }
+      ]
+    }
+  }
+}

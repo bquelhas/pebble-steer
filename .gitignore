@@ -1,0 +1,35 @@
+# --- Pebble build output ---
+build/
+*.pbw
+.lock-waf*
+*.log
+
+# --- Editor / OS cruft ---
+.DS_Store
+*.bak
+src/c/*.bak
+
+# --- Third-party / proprietary material (must NOT be redistributed) ---
+# Decompiled third-party watchapps used only for protocol research.
+_extracted/
+pbw/
+analysis/
+
+# --- Local scratch, prompts and internal agent hand-off notes ---
+scratch/
+prompts/
+CLAUDE.md
+GEMINI.md
+HANDOFF_*.md
+RESUMO.md
+ENSINO_*.md
+FEATURES.md
+upstream_comaps_issue.md
+
+# --- Icon working backups (timestamped scratch copies) ---
+**/*backup*/
+**/ramp_backups/
+resources/pebble_icons/pdc_backup*/
+
+# --- Root-level dev screenshots (keep resources/ images) ---
+/*.png
