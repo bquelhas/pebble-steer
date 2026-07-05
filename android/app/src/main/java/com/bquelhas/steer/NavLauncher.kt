@@ -129,6 +129,8 @@ object NavLauncher {
         when (app) {
             NavApp.GOOGLE_MAPS -> mapsIntent(context, query, mode)
             NavApp.OSMAND -> osmandIntent(context, query, mode)
+            NavApp.ORGANIC -> omRouteIntent(context, query, mode, PKG_ORGANIC, "om")
+            NavApp.COMAPS -> omRouteIntent(context, query, mode, PKG_COMAPS, "cm")
             NavApp.AUTO -> null
         }
 

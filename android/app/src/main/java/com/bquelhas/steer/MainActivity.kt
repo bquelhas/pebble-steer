@@ -229,21 +229,26 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupSpeedControls(root: View) {
-        // Per-mode speedometer: pick which travel modes show current speed on the watch.
-        val speedModeBoxes = listOf(
-            R.id.chkSpeedCar to TravelMode.CAR,
-            R.id.chkSpeedBike to TravelMode.BICYCLE,
-            R.id.chkSpeedWalk to TravelMode.PEDESTRIAN,
-            R.id.chkSpeedTransit to TravelMode.TRANSIT,
-        )
-        speedModeBoxes.forEach { (id, mode) ->
-            val box = root.findViewById<MaterialCheckBox>(id)
-            box.isChecked = NavPrefs.isSpeedometerForMode(applicationContext, mode)
-            box.setOnCheckedChangeListener { _, checked ->
-                NavPrefs.setSpeedometerForMode(applicationContext, mode, checked)
-                if (checked) ensureLocationPermission()
-                updateSpeedControls()
+        // Speedometer behaviour: Off / Always / Bicycle-only (shows speed only for a watch-launched
+        // bicycle route). Replaces the old per-mode checkboxes.
+        val speedModeToggle = root.findViewById<MaterialButtonToggleGroup>(R.id.speedModeToggle)
+        speedModeToggle.check(
+            when (NavPrefs.getSpeedometerMode(applicationContext)) {
+                SpeedometerMode.OFF -> R.id.speedModeOff
+                SpeedometerMode.ALWAYS -> R.id.speedModeAlways
+                SpeedometerMode.BICYCLE -> R.id.speedModeBike
             }
+        )
+        speedModeToggle.addOnButtonCheckedListener { _, buttonId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val mode = when (buttonId) {
+                R.id.speedModeAlways -> SpeedometerMode.ALWAYS
+                R.id.speedModeBike -> SpeedometerMode.BICYCLE
+                else -> SpeedometerMode.OFF
+            }
+            NavPrefs.setSpeedometerMode(applicationContext, mode)
+            if (mode != SpeedometerMode.OFF) ensureLocationPermission()
+            updateSpeedControls()
         }
 
         val alert = root.findViewById<SwitchCompat>(R.id.switchSpeedAlert)
@@ -302,7 +307,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateSpeedControls() {
-        val wantsSpeed = NavPrefs.isAnySpeedometer(applicationContext) || NavPrefs.isSpeedAlert(applicationContext)
+        val wantsSpeed = NavPrefs.isSpeedometerEnabled(applicationContext) || NavPrefs.isSpeedAlert(applicationContext)
         val hasPerm = SpeedProvider.hasLocationPermission(applicationContext)
         btnGrantLocation?.visibility = if (wantsSpeed && !hasPerm) View.VISIBLE else View.GONE
     }
@@ -434,6 +439,8 @@ class MainActivity : AppCompatActivity() {
             NavApp.AUTO -> R.id.navAppAuto
             NavApp.GOOGLE_MAPS -> R.id.navAppMaps
             NavApp.OSMAND -> R.id.navAppOsmand
+            NavApp.ORGANIC -> R.id.navAppOrganic
+            NavApp.COMAPS -> R.id.navAppComaps
         }
         group.check(checkedId)
         group.addOnButtonCheckedListener { _, buttonId, isChecked ->
@@ -441,6 +448,8 @@ class MainActivity : AppCompatActivity() {
             val app = when (buttonId) {
                 R.id.navAppMaps -> NavApp.GOOGLE_MAPS
                 R.id.navAppOsmand -> NavApp.OSMAND
+                R.id.navAppOrganic -> NavApp.ORGANIC
+                R.id.navAppComaps -> NavApp.COMAPS
                 else -> NavApp.AUTO
             }
             NavPrefs.setNavApp(applicationContext, app)

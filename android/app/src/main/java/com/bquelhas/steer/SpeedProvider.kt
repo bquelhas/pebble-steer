@@ -37,6 +37,7 @@ object SpeedProvider {
     private var running = false
 
     private var lastSentSpeed = -1
+    private var lastGateBlockedLog = -1
     private var alertActive = false
     private var lastLimit = NavPrefs.DEFAULT_SPEED_LIMIT
 
@@ -49,8 +50,8 @@ object SpeedProvider {
     /** Begins listening for GPS fixes and relaying speed. No-op if already running. */
     fun start(context: Context) {
         if (running) return
-        if (!NavPrefs.isAnySpeedometer(context) && !NavPrefs.isSpeedAlert(context)) {
-            Log.d(TAG, "start skipped: speedometer (all modes) + alert both off")
+        if (!NavPrefs.isSpeedometerEnabled(context) && !NavPrefs.isSpeedAlert(context)) {
+            Log.d(TAG, "start skipped: speedometer + alert both off")
             return
         }
         if (!hasLocationPermission(context)) {
@@ -132,10 +133,19 @@ object SpeedProvider {
     }
 
     private fun maybeSendSpeed(context: Context, kmh: Int) {
-        // Per-mode gate: only stream speed if the current session's travel mode wants it.
-        if (!NavPrefs.isSpeedometerForMode(context, NavPrefs.getActiveMode(context))) return
+        // Gate: Off never streams; Always always does; Bicycle only for a watch-launched bike route.
+        val activeMode = NavPrefs.getActiveMode(context)
+        if (!NavPrefs.shouldShowSpeed(context, activeMode)) {
+            if (kmh != lastGateBlockedLog) {
+                Log.d(TAG, "speed $kmh km/h suppressed: mode=${NavPrefs.getSpeedometerMode(context)}" +
+                    " activeRoute=${activeMode.name}")
+                lastGateBlockedLog = kmh
+            }
+            return
+        }
         if (kmh == lastSentSpeed) return
         lastSentSpeed = kmh
+        Log.d(TAG, "speed $kmh km/h -> watch (mode ${activeMode.name})")
         PebbleEmitter.sendSpeed(context, kmh)
     }
 

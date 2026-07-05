@@ -175,6 +175,17 @@
             android:textAppearance="?attr/textAppearanceBodyLarge"
             android:text="@string/vibe_label" />
 
+        <!-- Speed section: HIDDEN (not removed). The speedometer and the speed-limit alert both
+             need continuous background GPS, which Android throttles to a few fixes/hour for a
+             non-foreground app, so neither works reliably without a location foreground service.
+             Wrapped in a gone container so the whole feature disappears from the UI while the
+             code and views stay in the tree, ready to re-enable once that service exists. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
         <!-- Speed -->
         <TextView
             android:layout_width="wrap_content"
@@ -203,34 +214,41 @@
             android:textAppearance="?attr/textAppearanceBodySmall"
             android:textColor="?attr/colorOnSurfaceVariant" />
 
-        <com.google.android.material.checkbox.MaterialCheckBox
-            android:id="@+id/chkSpeedCar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-condensed"
-            android:text="@string/mode_car" />
-
-        <com.google.android.material.checkbox.MaterialCheckBox
-            android:id="@+id/chkSpeedBike"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-condensed"
-            android:text="@string/mode_bicycle" />
-
-        <com.google.android.material.checkbox.MaterialCheckBox
-            android:id="@+id/chkSpeedWalk"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-condensed"
-            android:text="@string/mode_pedestrian" />
-
-        <com.google.android.material.checkbox.MaterialCheckBox
-            android:id="@+id/chkSpeedTransit"
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/speedModeToggle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
-            android:fontFamily="sans-serif-condensed"
-            android:text="@string/mode_transit" />
+            app:singleSelection="true"
+            app:selectionRequired="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/speedModeOff"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:text="@string/speedometer_off" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/speedModeAlways"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:text="@string/speedometer_always" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/speedModeBike"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:text="@string/speedometer_bike" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
 
         <com.google.android.material.materialswitch.MaterialSwitch
             android:id="@+id/switchSpeedAlert"
@@ -335,6 +353,8 @@
             android:fontFamily="sans-serif-condensed"
             android:visibility="gone"
             android:text="@string/speed_grant_perm" />
+        </LinearLayout>
+        <!-- /Speed section (hidden) -->
 
         <!-- Distance units -->
         <TextView

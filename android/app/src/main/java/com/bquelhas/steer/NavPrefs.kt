@@ -2,6 +2,14 @@ package com.bquelhas.steer
 
 import android.content.Context
 
+/**
+ * How the watch speedometer decides when to show the current speed.
+ *  - [OFF]: never stream speed.
+ *  - [ALWAYS]: show speed whenever a route is active, regardless of how/where it started.
+ *  - [BICYCLE]: only show when the active route was launched from the watch in bicycle mode.
+ */
+enum class SpeedometerMode { OFF, ALWAYS, BICYCLE }
+
 /** Small persisted settings store shared by the UI and the listener service. */
 object NavPrefs {
     private const val FILE = "navme_prefs"
@@ -9,7 +17,7 @@ object NavPrefs {
     private const val KEY_BG_COLOR = "bg_color"
     private const val KEY_VIBE_ON_TURN = "vibe_on_turn"
     private const val KEY_DEBUG_TESTS = "debug_tests"
-    private const val KEY_SPEEDOMETER_PREFIX = "speedometer_" // + TravelMode.name (per-mode)
+    private const val KEY_SPEEDOMETER_MODE = "speedometer_mode"
     private const val KEY_ACTIVE_MODE = "active_mode"
     private const val KEY_SPEED_ALERT = "speed_alert"
     private const val KEY_SPEED_LIMIT = "speed_limit"
@@ -66,23 +74,33 @@ object NavPrefs {
     }
 
     /**
-     * Whether the watch speedometer is on for a given [TravelMode] — when true, [SpeedProvider]
-     * reads the phone GPS while navigating in that mode and streams the current speed (km/h) to the
-     * watch (NAV_SPEED). Chosen per mode so e.g. cycling shows speed while driving doesn't. Defaults:
-     * bicycle + pedestrian ON (speed matters there), car + transit OFF.
+     * How the watch speedometer behaves (Off / Always / Bicycle-only). When not Off, [SpeedProvider]
+     * reads the phone GPS while navigating and streams the current speed (km/h) to the watch
+     * (NAV_SPEED). Default [SpeedometerMode.BICYCLE] — speed matters most while cycling.
      */
-    fun isSpeedometerForMode(context: Context, mode: TravelMode): Boolean {
-        val default = mode == TravelMode.BICYCLE || mode == TravelMode.PEDESTRIAN
-        return prefs(context).getBoolean(KEY_SPEEDOMETER_PREFIX + mode.name, default)
+    fun getSpeedometerMode(context: Context): SpeedometerMode {
+        val ord = prefs(context).getInt(KEY_SPEEDOMETER_MODE, SpeedometerMode.BICYCLE.ordinal)
+        return SpeedometerMode.entries.getOrElse(ord) { SpeedometerMode.BICYCLE }
     }
 
-    fun setSpeedometerForMode(context: Context, mode: TravelMode, enabled: Boolean) {
-        prefs(context).edit().putBoolean(KEY_SPEEDOMETER_PREFIX + mode.name, enabled).apply()
+    fun setSpeedometerMode(context: Context, mode: SpeedometerMode) {
+        prefs(context).edit().putInt(KEY_SPEEDOMETER_MODE, mode.ordinal).apply()
     }
 
-    /** True when the speedometer is enabled for at least one travel mode (gates GPS streaming). */
-    fun isAnySpeedometer(context: Context): Boolean =
-        TravelMode.entries.any { isSpeedometerForMode(context, it) }
+    /** True when the speedometer is on in any form (gates GPS streaming). */
+    fun isSpeedometerEnabled(context: Context): Boolean =
+        getSpeedometerMode(context) != SpeedometerMode.OFF
+
+    /**
+     * Whether the current speed should be streamed for a route in [activeMode]: always in
+     * [SpeedometerMode.ALWAYS]; only for bicycle routes in [SpeedometerMode.BICYCLE]; never when Off.
+     */
+    fun shouldShowSpeed(context: Context, activeMode: TravelMode): Boolean =
+        when (getSpeedometerMode(context)) {
+            SpeedometerMode.OFF -> false
+            SpeedometerMode.ALWAYS -> true
+            SpeedometerMode.BICYCLE -> activeMode == TravelMode.BICYCLE
+        }
 
     /**
      * The travel mode of the current navigation session, set when a favourite is launched from the

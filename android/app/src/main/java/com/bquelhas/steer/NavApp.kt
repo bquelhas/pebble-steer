@@ -12,4 +12,6 @@ enum class NavApp {
     AUTO,
     GOOGLE_MAPS,
     OSMAND,
+    ORGANIC,
+    COMAPS,
 }

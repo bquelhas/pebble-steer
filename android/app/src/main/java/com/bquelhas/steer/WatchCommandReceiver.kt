@@ -37,11 +37,14 @@ class WatchCommandReceiver : PebbleKit.PebbleDataReceiver(NavKeys.WATCH_UUID) {
         lastIndex = idx; lastAt = now
 
         // Travel mode chosen on the watch (0 car by default if an older watchapp omits it).
-        val mode = TravelMode.fromId(
-            data.getUnsignedIntegerAsLong(NavKeys.NAV_ROUTE_MODE)?.toInt() ?: 0
-        )
+        val rawMode = data.getUnsignedIntegerAsLong(NavKeys.NAV_ROUTE_MODE)
+        val mode = TravelMode.fromId(rawMode?.toInt() ?: 0)
         // Remember it for the session so SpeedProvider can gate the speedometer per mode.
         NavPrefs.setActiveMode(context, mode)
+        // Diagnostic: a null rawMode means the watchapp didn't include NAV_ROUTE_MODE (19) in the
+        // trigger message, so we fall back to CAR — for which the speedometer is off by default.
+        Log.i(TAG, "NAV_ROUTE_MODE raw=$rawMode -> ${mode.name}" +
+            (if (rawMode == null) " (MISSING: watch sent no mode, defaulting CAR)" else ""))
 
         val favs = FavoritesStore.all(context)
         val fav = favs.getOrNull(idx)

@@ -17,7 +17,10 @@
     <string name="autolaunch_label">Open the app on Pebble when navigating</string>
     <string name="vibe_label">Vibrate the watch on each maneuver</string>
     <string name="speedometer_label">Show speed on the watch</string>
-    <string name="speedometer_caption">Choose which travel modes show current speed on the watch.</string>
+    <string name="speedometer_caption">Off, always shown, or only when the watch route is a bicycle trip.</string>
+    <string name="speedometer_off">Off</string>
+    <string name="speedometer_always">Always</string>
+    <string name="speedometer_bike">Bicycle</string>
     <string name="mode_car">Car</string>
     <string name="mode_bicycle">Bicycle</string>
     <string name="mode_pedestrian">Walk</string>
@@ -36,6 +39,8 @@
     <string name="nav_app_auto">Auto</string>
     <string name="nav_app_maps">Maps</string>
     <string name="nav_app_osmand">OsmAnd</string>
+    <string name="nav_app_organic">Organic</string>
+    <string name="nav_app_comaps">CoMaps</string>
     <string name="overlay_grant">Allow opening over other apps</string>
     <string name="overlay_caption">To start navigation straight from the watch, Steer needs permission to open apps from the background. Without it you\'ll get a tap-to-launch notification instead.</string>
     <string name="nav_launch_title">Navigate to %1$s</string>
