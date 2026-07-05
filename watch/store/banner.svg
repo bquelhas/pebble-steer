@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320">
+  <rect x="0" y="0" width="720" height="320" fill="#FF4B49"/>
+
+  <!-- Car glyph (from docs/icon_car_red.svg), scaled up and left-placed -->
+  <g transform="translate(56,64) scale(1.78)">
+    <g transform="translate(24,24) scale(0.75)"
+       stroke-linecap="round" stroke-linejoin="round">
+      <path fill="#FFFFFF" stroke="none"
+            d="M22,25 L35,7 L63,14 L66,36 L70,37 L65,57 L13,44 L18,24 Z"/>
+      <path fill="#FFFFFF" stroke="none" d="M25,47 L22,59 L14,57 L17,45 Z"/>
+      <path fill="#FFFFFF" stroke="none" d="M61,56 L58,68 L50,66 L53,54 Z"/>
+      <path fill="none" stroke="#000000" stroke-width="4"
+            d="M25,47 L22,59 L14,57 L17,45
+               M61,56 L58,68 L50,66 L53,54
+               M22,25 L35,7 L63,14 L66,36 L70,37 L65,57 L13,44 L18,24 Z
+               M74,74 L6,74
+               M66,36 L22,25
+               M35,41 L47,44
+               M22,25 L15,19
+               M75,34 L66,36"/>
+      <path fill="none" stroke="#000000" stroke-width="3"
+            d="M61.5,19.5 L33.5,12.5
+               M68,45 L56,42 L58,34
+               M30,27 L28,35 L16,32"/>
+    </g>
+  </g>
+
+  <!-- Wordmark: S T then two mirrored "3" (read as rounded E) then R, in LECO -->
+  <g fill="#FFFFFF" font-family="LECO 2014" font-weight="bold" font-size="128"
+     text-anchor="middle">
+    <text x="327" y="168">S</text>
+    <text x="411" y="168">T</text>
+    <text transform="translate(492,168) scale(-1,1)" x="0" y="0">3</text>
+    <text transform="translate(569,168) scale(-1,1)" x="0" y="0">3</text>
+    <text x="652" y="168">R</text>
+  </g>
+
+  <!-- Tagline -->
+  <text x="490" y="206" fill="#FFFFFF" text-anchor="middle"
+        font-family="DejaVu Sans, Arial, sans-serif" font-weight="normal"
+        font-size="30" opacity="0.95">Turn-by-turn navigation</text>
+  <text x="490" y="244" fill="#FFFFFF" text-anchor="middle"
+        font-family="DejaVu Sans, Arial, sans-serif" font-weight="normal"
+        font-size="30" opacity="0.95">on your Pebble</text>
+</svg>
