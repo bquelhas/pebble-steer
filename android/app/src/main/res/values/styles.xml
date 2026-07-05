@@ -23,4 +23,15 @@
         <item name="android:paddingStart">4dp</item>
         <item name="android:paddingEnd">4dp</item>
     </style>
+
+    <!-- Invisible, no-UI theme for the keyguard trampoline: it wakes the screen, asks to
+         dismiss the lock, then launches the navigator and finishes. Never actually shown. -->
+    <style name="Theme.Steer.Transparent" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
 </resources>

@@ -66,6 +66,18 @@
             android:exported="false"
             android:label="@string/mock_nav_title" />
 
+        <!-- Invisible keyguard trampoline: wakes the screen and dismisses the lock before
+             launching the navigator when a favorite is picked on the watch while locked. -->
+        <activity
+            android:name=".NavLaunchTrampolineActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@style/Theme.Steer.Transparent" />
+
         <receiver
             android:name=".DebugIconReceiver"
             android:exported="true">

@@ -1,6 +1,7 @@
 package com.bquelhas.navme
 
 import android.Manifest
+import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -152,12 +153,26 @@ object NavLauncher {
     fun launchForWatch(context: Context, label: String, query: String, mode: TravelMode) {
         val intent = resolveForWatch(context, query, mode).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         if (Settings.canDrawOverlays(context)) {
-            try {
-                context.startActivity(intent)
-                Log.i(TAG, "launched '$label' (${mode.name}) directly (overlay-exempt)")
-                return
-            } catch (e: Exception) {
-                Log.e(TAG, "direct launch failed: ${e.message}")
+            // When the phone is locked, a direct startActivity queues the navigator behind the
+            // secure keyguard (it only surfaces after a manual unlock). Route through the
+            // trampoline instead: it wakes the screen, prompts to dismiss the lock, then launches.
+            val km = context.getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+            if (km?.isKeyguardLocked == true) {
+                try {
+                    context.startActivity(NavLaunchTrampolineActivity.intentFor(context, intent))
+                    Log.i(TAG, "launched '$label' (${mode.name}) via keyguard trampoline (locked)")
+                    return
+                } catch (e: Exception) {
+                    Log.e(TAG, "trampoline launch failed: ${e.message}")
+                }
+            } else {
+                try {
+                    context.startActivity(intent)
+                    Log.i(TAG, "launched '$label' (${mode.name}) directly (overlay-exempt)")
+                    return
+                } catch (e: Exception) {
+                    Log.e(TAG, "direct launch failed: ${e.message}")
+                }
             }
         }
         Log.i(TAG, "no overlay permission; posting launch notification for '$label'")
