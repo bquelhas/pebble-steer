@@ -82,7 +82,7 @@
             android:name=".DebugIconReceiver"
             android:exported="true">
             <intent-filter>
-                <action android:name="com.bquelhas.navme.SHOW_ICON" />
+                <action android:name="com.bquelhas.steer.SHOW_ICON" />
             </intent-filter>
         </receiver>
 
@@ -90,9 +90,9 @@
             android:name=".MockNavReceiver"
             android:exported="true">
             <intent-filter>
-                <action android:name="com.bquelhas.navme.MOCK_NAV" />
-                <action android:name="com.bquelhas.navme.MOCK_NAV_CANCEL" />
-                <action android:name="com.bquelhas.navme.SET_DEBUG" />
+                <action android:name="com.bquelhas.steer.MOCK_NAV" />
+                <action android:name="com.bquelhas.steer.MOCK_NAV_CANCEL" />
+                <action android:name="com.bquelhas.steer.SET_DEBUG" />
             </intent-filter>
         </receiver>
 
