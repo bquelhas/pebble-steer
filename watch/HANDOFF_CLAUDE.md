@@ -2,9 +2,10 @@
 
 **Cards-Style Transitions & Animations — DONE:**
 - **Background wipe transition**: Implemented a horizontal division line in `prv_panel_update_proc` that sweeps vertically across the card during page transitions, wiping between the old background color (`s_prev_bg_color`) and the new one (`s_bg_color`) according to the transition slide direction.
-- **Vector Icon Morphing**: Added coordinate attraction morphing logic (`prv_icon_apply_morph` / `prv_icon_morph_iter`) inside `#if Steer_Has_Transitions`. In the first half of the transition (`s_anim_pct <= 50`), the old icon (`s_prev_pdc_image`) morphs into a square. At 50%, the old icon is destroyed and the new icon's fitted points are snapshotted. In the second half (`s_anim_pct > 50`), the new icon (`s_active_pdc_image`) morphs from a square to its original shape.
+- **Vector Icon Morphing**: Added coordinate attraction morphing logic (`prv_icon_apply_morph` / `prv_icon_morph_iter`) inside `#if Steer_Has_Transitions`. In the first half of the transition (`s_anim_pct <= 50`), the old icon (`s_prev_pdc_image`) morphs into a square. At 50%, the old icon is destroyed and the new icon's fitted points are snapshotted. In the second half (`s_anim_pct > 50`), the new icon (`s_active_pdc_image`) morphs from a square to its original shape. To hide intermediate shape imperfections, the morph progress window was optimized to run snappy between 20% and 80% (morphing to/from the square in a tight 30% window while keeping the background wipe and text sliding fully smooth).
 - **Text Slide**: Applied vertical offsets during drawing in `prv_panel_update_proc` (outbound slides up by up to 20px, inbound slides in from 8px below).
-- **Toggle Macro**: Introduced `#define USE_CARDS_TRANSITION 1` in `navme.c`. Setting this macro to `0` reverts to the old slide/squash transition sequence.
+- **Faster transition duration**: Switched transition frame timer from `25ms` to `16ms` (matching 60fps refresh rate on color watches) under `USE_CARDS_TRANSITION` to make the cards wipe and morph transitions feel fluid and snappy.
+- **Toggle Macro**: Introduced `#define USE_CARDS_TRANSITION 1` in `navme.c`. Setting this macro to `0` reverts to the old slide/squash transition sequence (restoring the `25ms` frame rate exactly).
 
 **Aplite Compatibility & Memory Optimization — DONE:**
 - Re-enabled `"aplite"` in `package.json` target platforms.

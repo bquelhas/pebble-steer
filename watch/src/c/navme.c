@@ -1320,8 +1320,12 @@ static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
     // 2. Draw icon & text depending on animation progress
     if (s_anim_pct <= 50) {
       // First half: draw old icon morphing to square, old text sliding out
-      int morph_pct = s_anim_pct * 2;
-      int text_dy = -(morph_pct * 20 / 100);
+      int slide_pct = s_anim_pct * 2;
+      int morph_pct = 0;
+      if (s_anim_pct > 20 && s_anim_pct <= 50) {
+        morph_pct = (s_anim_pct - 20) * 100 / 30;
+      }
+      int text_dy = -(slide_pct * 20 / 100);
 
       // Mutate prev icon to morph state and draw it
       if (s_prev_pdc_image) {
@@ -1341,8 +1345,12 @@ static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
       }
     } else {
       // Second half: draw new icon morphing from square, new text sliding in
-      int morph_pct = (100 - s_anim_pct) * 2;
-      int text_dy = (morph_pct * 8 / 100);
+      int slide_pct = (100 - s_anim_pct) * 2;
+      int morph_pct = 0;
+      if (s_anim_pct > 50 && s_anim_pct < 80) {
+        morph_pct = (80 - s_anim_pct) * 100 / 30;
+      }
+      int text_dy = (slide_pct * 8 / 100);
 
       // Mutate active icon to morph state and draw it
       if (s_active_pdc_image) {
@@ -1934,7 +1942,7 @@ static void prv_anim_timer_cb(void *ctx) {
         s_prev_pdc_image = NULL;
       }
     } else {
-      s_anim_timer = app_timer_register(25, prv_anim_timer_cb, NULL);
+      s_anim_timer = app_timer_register(16, prv_anim_timer_cb, NULL);
     }
 #else
     if (s_anim_pct >= 100) {
@@ -2093,7 +2101,11 @@ static void prv_update_ui(void) {
       s_forwarded_icon_dirty = false;
       s_anim_state = ANIM_STATE_TRANSITIONING;
       s_anim_pct = 0;
+#if USE_CARDS_TRANSITION
+      s_anim_timer = app_timer_register(16, prv_anim_timer_cb, NULL);
+#else
       s_anim_timer = app_timer_register(25, prv_anim_timer_cb, NULL);
+#endif
     }
     
     if (s_panel_layer) {
