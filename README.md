@@ -5,6 +5,15 @@ map app. Steer shows the next-maneuver icon, distance, street/instruction and
 ETA on the watch — no proprietary cloud, just a notification listener on the
 phone talking to a watchapp over Bluetooth.
 
+## Download the phone app
+
+Grab the companion Android app (`.apk`) from the
+[**latest release**](https://github.com/bquelhas/pebble-steer/releases/latest),
+then sideload it: open the file on your phone and allow "install unknown apps"
+when prompted. The watchapp itself is bundled inside the phone app — install it
+to your watch from the app's Developer screen (or get it from the Rebble app
+store). The watchapp `.pbw` is also attached to the release.
+
 This is a monorepo with two halves:
 
 | Directory | What it is |
