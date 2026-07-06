@@ -197,6 +197,15 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
 
+        root.findViewById<Button>(R.id.btnGithub).setOnClickListener {
+            val url = getString(R.string.github_url)
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+            } catch (e: android.content.ActivityNotFoundException) {
+                Toast.makeText(this, url, Toast.LENGTH_LONG).show()
+            }
+        }
+
         applyPreviewColor(NavPrefs.getBgColor(applicationContext))
         updateStatus()
         updateSetupCard()

@@ -451,5 +451,34 @@
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif-condensed"
             android:text="@string/detect_organic" />
+
+        <!-- About / source: link to GitHub so users can download or share the APK -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="4dp"
+            android:fontFamily="sans-serif-condensed"
+            android:text="@string/about_label"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold"
+            android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:fontFamily="sans-serif-condensed"
+            android:text="@string/about_caption"
+            android:textAppearance="?attr/textAppearanceBodySmall" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnGithub"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            app:icon="@android:drawable/stat_sys_download"
+            android:text="@string/github_button" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

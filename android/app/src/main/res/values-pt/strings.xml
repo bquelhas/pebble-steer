@@ -111,4 +111,9 @@
     <!-- Aviso de programador -->
     <string name="developer_warn_title">Apenas para testes</string>
     <string name="developer_warn_body">Estas ferramentas testam a ligação ao relógio e os ícones de manobra. Enviam navegação falsa — deixa-as desligadas no uso normal.</string>
+
+    <!-- Sobre / código-fonte -->
+    <string name="about_label">Sobre</string>
+    <string name="about_caption">O Steer é gratuito e de código aberto. Descarrega a versão mais recente da app (.apk) ou partilha-a com alguém a partir do GitHub.</string>
+    <string name="github_button">Descarregar / ver no GitHub</string>
 </resources>

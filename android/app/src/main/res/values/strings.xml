@@ -116,4 +116,10 @@
     <!-- Developer warning -->
     <string name="developer_warn_title">For testing only</string>
     <string name="developer_warn_body">These tools test the watch link and the maneuver icons. They send fake navigation — leave them off for normal use.</string>
+
+    <!-- About / source -->
+    <string name="about_label">About</string>
+    <string name="about_caption">Steer is free and open source. Download the latest app (.apk) or share it with a friend from GitHub.</string>
+    <string name="github_button">Download / view on GitHub</string>
+    <string name="github_url" translatable="false">https://github.com/bquelhas/pebble-steer/releases/latest</string>
 </resources>
