@@ -16,7 +16,7 @@ export GEVENT_RESOLVER=block
 PEBBLE=/home/bquelhas/.local/share/uv/tools/pebble-tool/bin/pebble
 WATCH=/home/bquelhas/projetos/pebble-steer/watch
 OUT=/home/bquelhas/projetos/pebble-steer/docs/screenshots
-UUID=1bdfe435-6a34-42d5-aed7-ace29fec1260
+UUID=5e0abdd0-dc23-434f-b01b-20bcbb816542
 cd "$WATCH" || exit 1
 mkdir -p "$OUT"
 noise() { grep -viE "new SDK|Update with|new pebble-tool"; }

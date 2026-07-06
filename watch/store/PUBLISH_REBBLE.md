@@ -9,7 +9,7 @@ generated bundle to **support@rebble.io** — see help.rebble.io/appstore-submis
 ## 1. Release file (.pbw)
 
 - **File:** `watch/build/watch.pbw`
-- Version **1.0.0**, UUID `1bdfe435-6a34-42d5-aed7-ace29fec1260`
+- Version **1.0.0**, UUID `5e0abdd0-dc23-434f-b01b-20bcbb816542`
 - Bundles 4 platforms: basalt, chalk, diorite, emery.
   (aplite is deferred to 1.1 — the classic-Pebble build runs out of heap and
   crashes on launch; see section 5.)

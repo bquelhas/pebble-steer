@@ -7,7 +7,7 @@ import java.util.UUID
  * The integer key values MUST match `messageKeys` in the Pebble package.json.
  */
 object NavKeys {
-    val WATCH_UUID: UUID = UUID.fromString("1bdfe435-6a34-42d5-aed7-ace29fec1260")
+    val WATCH_UUID: UUID = UUID.fromString("5e0abdd0-dc23-434f-b01b-20bcbb816542")
 
     const val NAV_TURN = 0          // int: maneuver index (Direction.id)
     const val NAV_TEXT_BEGIN = 1    // uint8: start of instruction frame

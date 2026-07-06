@@ -11,7 +11,7 @@ from pebble_tool.sdk import sdk_version
 from libpebble2.communication import PebbleConnection
 from libpebble2.services.appmessage import AppMessageService, CString, Int32
 
-APP_UUID = uuid.UUID('1bdfe435-6a34-42d5-aed7-ace29fec1260')
+APP_UUID = uuid.UUID('5e0abdd0-dc23-434f-b01b-20bcbb816542')
 
 # key ids from watch/package.json messageKeys
 NAV_TURN, NAV_TEXT, NAV_ETA = 0, 2, 7
