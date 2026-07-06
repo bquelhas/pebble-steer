@@ -21,7 +21,7 @@
 **Verification**:
 - Compiled 100% warning-free on all 5 platforms.
 - Verified on the `aplite` emulator (pushed watchapp successfully, confirmed it launches and functions stably). Screenshot saved at [aplite_screenshot.png](file:///home/bquelhas/.gemini/antigravity/brain/884fa278-0280-49dd-bcf8-858f781671da/aplite_screenshot.png).
-- Copied compiled `watch.pbw` to `/home/bquelhas/projetos/pebble-steer/watch/watch.pbw` and `/home/bquelhas/projetos/pebble-steer/watch/pbw/steer.pbw` for direct testing.
+- Copied compiled `watch.pbw` to `/home/bquelhas/projetos/pebble-steer/watch/watch.pbw`, `/home/bquelhas/projetos/pebble-steer/watch/pbw/steer.pbw`, and packaged it directly into the Android assets folder at `/home/bquelhas/projetos/pebble-steer/android/app/src/main/assets/steer.pbw` so that it is compiled into the Android app as the current version.
 
 ---
 
