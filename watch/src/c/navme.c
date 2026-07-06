@@ -526,9 +526,10 @@ static void prv_draw_procedural_arrow(GContext *ctx, GRect bounds, int index) {
   // Chalk: 180x180 circular screen
   #define STATUS_BAR_RECT           GRect(0, 0, 180, 25)
   #define STATUS_BAR_HEIGHT         25
-  #define ICON_RELATIVE_RECT        GRect(25, 3, 60, 60)
-  #define DISTANCE_RELATIVE_RECT    GRect(90, 17, 65, 32)
-  #define STREET_RELATIVE_RECT      GRect(20, 77, 140, 70)
+  #define ICON_RELATIVE_RECT        GRect(14, 8, 50, 50)
+  #define DISTANCE_RELATIVE_RECT    GRect(74, 17, 81, 32)
+  #define STREET_RELATIVE_RECT      GRect(20, 74, 140, 44)
+  #define ETA_RELATIVE_RECT         GRect(20, 121, 140, 16)
   #define DISTANCE_FONT    FONT_KEY_LECO_32_BOLD_NUMBERS
   #define STREET_FONT      FONT_KEY_GOTHIC_18_BOLD
 #elif defined(PBL_PLATFORM_EMERY)
@@ -581,13 +582,9 @@ static void prv_status_bar_update_proc(Layer *layer, GContext *ctx) {
   const char *draw_eta = s_eta_text;
 
 #if defined(PBL_ROUND)
-  time_rect = GRect(32, (bounds.size.h - 16) / 2 - 1, 46, 16);
-  eta_rect = GRect(102, (bounds.size.h - 16) / 2 - 1, 46, 16);
-  time_align = GTextAlignmentRight;
-  eta_align = GTextAlignmentLeft;
-  if (strncmp(draw_eta, "ETA: ", 5) == 0) {
-    draw_eta += 5;
-  }
+  time_rect = GRect((180 - 60) / 2, (bounds.size.h - 16) / 2 - 1, 60, 16);
+  time_align = GTextAlignmentCenter;
+  draw_eta = NULL;
 #else
   if (bounds.size.w <= 144) {
     time_rect = GRect(48, (bounds.size.h - 16) / 2 - 1, 36, 16);
@@ -603,7 +600,9 @@ static void prv_status_bar_update_proc(Layer *layer, GContext *ctx) {
 #endif
   
   graphics_draw_text(ctx, time_buffer, font, time_rect, GTextOverflowModeWordWrap, time_align, NULL);
-  graphics_draw_text(ctx, draw_eta, font, eta_rect, GTextOverflowModeWordWrap, eta_align, NULL);
+  if (draw_eta) {
+    graphics_draw_text(ctx, draw_eta, font, eta_rect, GTextOverflowModeWordWrap, eta_align, NULL);
+  }
 }
 
 
@@ -1365,6 +1364,17 @@ static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
       prv_draw_street(ctx, STREET_RELATIVE_RECT, 0, s_street_text, bg_resolved, bounds);
     }
   }
+
+#if defined(PBL_ROUND)
+  // Draw ETA centered near the bottom of circular screens (Chalk)
+  if (s_eta_text[0] != '\0') {
+    GColor eta_color = prv_distance_fg_for_bg(prv_resolve_bg_color(s_bg_color));
+    graphics_context_set_text_color(ctx, eta_color);
+    GFont eta_font = fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD);
+    graphics_draw_text(ctx, s_eta_text, eta_font, ETA_RELATIVE_RECT, 
+                       GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  }
+#endif
 }
 
 // ---- PDC icon appear animation (vector draw-on point by point) ----
@@ -1441,8 +1451,8 @@ static bool prv_icon_scale_iter(GDrawCommand *command, uint32_t index, void *con
     for (uint16_t i = 0; i < n; i++) {
       if (start_idx + i < ICON_PTS_CAP) {
         GPoint o = s_icon_pts_orig[start_idx + i];
-        int32_t dx = (((int32_t)o.x - s_fit_cx) * s_fit_num / 256) * c->scale_pct / 100 * c->factor_x / 100;
-        int32_t dy = (((int32_t)o.y - s_fit_cy) * s_fit_num / 256) * c->scale_pct / 100 * c->factor_y / 100;
+        int32_t dx = ((int32_t)o.x - s_fit_cx) * s_fit_num * c->scale_pct * c->factor_x / 2560000;
+        int32_t dy = ((int32_t)o.y - s_fit_cy) * s_fit_num * c->scale_pct * c->factor_y / 2560000;
         scaled_pts[i] = GPoint(s_box_cx + dx, s_box_cy + dy);
       } else {
         scaled_pts[i] = GPoint(0, 0);
@@ -1456,7 +1466,7 @@ static bool prv_icon_scale_iter(GDrawCommand *command, uint32_t index, void *con
         int circle_idx = s_icon_circle_count++;
         if (circle_idx < ICON_CMDS_CAP) {
           uint16_t orig_r = s_icon_radii_orig[circle_idx];
-          uint16_t scaled_r = (orig_r * s_fit_num / 256) * c->scale_pct / 100 * c->factor_x / 100;
+          uint16_t scaled_r = orig_r * s_fit_num * c->scale_pct * c->factor_x / 2560000;
           gdraw_command_set_radius(command, scaled_r);
         }
       } else {
