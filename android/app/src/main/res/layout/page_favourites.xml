@@ -34,58 +34,21 @@
             android:text="@string/nav_app_caption"
             android:textAppearance="?attr/textAppearanceBodySmall" />
 
-        <com.google.android.material.button.MaterialButtonToggleGroup
-            android:id="@+id/navAppToggle"
+        <!-- Five mutually-exclusive options don't fit as a horizontal toggle row (the labels
+             get truncated), so use a Material exposed dropdown instead. -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/navAppLayout"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:singleSelection="true"
-            app:selectionRequired="true">
+            android:layout_height="wrap_content">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/navAppAuto"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="0dp"
-                android:layout_weight="1"
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/navAppDropdown"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-condensed"
-                android:text="@string/nav_app_auto" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/navAppMaps"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-condensed"
-                android:text="@string/nav_app_maps" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/navAppOsmand"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-condensed"
-                android:text="@string/nav_app_osmand" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/navAppOrganic"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-condensed"
-                android:text="@string/nav_app_organic" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/navAppComaps"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-condensed"
-                android:text="@string/nav_app_comaps" />
-        </com.google.android.material.button.MaterialButtonToggleGroup>
+                android:inputType="none" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnGrantOverlay"

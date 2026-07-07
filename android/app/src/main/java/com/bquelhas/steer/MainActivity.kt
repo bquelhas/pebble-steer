@@ -25,6 +25,7 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.DynamicColorsOptions
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
 
 /**
@@ -443,25 +444,20 @@ class MainActivity : AppCompatActivity() {
 
     /** Nav-app picker: which navigator opens when a favourite is started from the watch. */
     private fun setupNavAppToggle(root: View) {
-        val group = root.findViewById<MaterialButtonToggleGroup>(R.id.navAppToggle)
-        val checkedId = when (NavPrefs.getNavApp(applicationContext)) {
-            NavApp.AUTO -> R.id.navAppAuto
-            NavApp.GOOGLE_MAPS -> R.id.navAppMaps
-            NavApp.OSMAND -> R.id.navAppOsmand
-            NavApp.ORGANIC -> R.id.navAppOrganic
-            NavApp.COMAPS -> R.id.navAppComaps
-        }
-        group.check(checkedId)
-        group.addOnButtonCheckedListener { _, buttonId, isChecked ->
-            if (!isChecked) return@addOnButtonCheckedListener
-            val app = when (buttonId) {
-                R.id.navAppMaps -> NavApp.GOOGLE_MAPS
-                R.id.navAppOsmand -> NavApp.OSMAND
-                R.id.navAppOrganic -> NavApp.ORGANIC
-                R.id.navAppComaps -> NavApp.COMAPS
-                else -> NavApp.AUTO
-            }
-            NavPrefs.setNavApp(applicationContext, app)
+        val dropdown = root.findViewById<MaterialAutoCompleteTextView>(R.id.navAppDropdown)
+        // Index-aligned with the label array below.
+        val apps = listOf(NavApp.AUTO, NavApp.GOOGLE_MAPS, NavApp.OSMAND, NavApp.ORGANIC, NavApp.COMAPS)
+        val labels = arrayOf(
+            getString(R.string.nav_app_auto), getString(R.string.nav_app_maps),
+            getString(R.string.nav_app_osmand), getString(R.string.nav_app_organic),
+            getString(R.string.nav_app_comaps),
+        )
+        dropdown.setSimpleItems(labels)
+        val currentIndex = apps.indexOf(NavPrefs.getNavApp(applicationContext)).coerceAtLeast(0)
+        // false = don't filter the list down to the current text on next open.
+        dropdown.setText(labels[currentIndex], false)
+        dropdown.setOnItemClickListener { _, _, position, _ ->
+            NavPrefs.setNavApp(applicationContext, apps[position])
         }
     }
 
