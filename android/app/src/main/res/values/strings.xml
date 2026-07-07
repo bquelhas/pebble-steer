@@ -3,6 +3,8 @@
     <string name="notif_access">Grant notification access</string>
     <string name="setup_title">One step left</string>
     <string name="setup_body">Steer needs notification access to read navigation from your map app and send it to the watch.</string>
+    <string name="restricted_help_title">Toggle greyed out?</string>
+    <string name="restricted_help_body">Because Steer is installed from GitHub (not the Play Store), Android 13+ blocks notification access by default (\"Restricted settings\"). To allow it:\n\n1. Open Settings → Apps → Steer.\n2. Tap the ⋮ menu (top right) → Allow restricted settings, and confirm with your PIN or fingerprint.\n3. Come back and tap the button above — the switch is no longer greyed out.</string>
     <string name="send_mock">Send test navigation</string>
     <string name="mock_sent">Sent to the watch</string>
     <string name="watch_connected">Watch connected</string>
@@ -52,8 +54,8 @@
     <string name="units_auto">Automatic</string>
     <string name="units_metric">km</string>
     <string name="units_imperial">mi</string>
-    <string name="open_developer">Developer mode</string>
-    <string name="developer_title">Developer mode</string>
+    <string name="open_developer">Test mode</string>
+    <string name="developer_title">Test mode</string>
     <string name="preview_distance">200 M</string>
     <string name="preview_instruction">Junction 1 A20 / N114 A2 A6 A13 Santarém</string>
     <string name="preview_caption">Preview of the watch screen</string>
@@ -102,7 +104,7 @@
     <string name="tab_home">Home</string>
     <string name="tab_customization">Custom</string>
     <string name="tab_favourites">Favs</string>
-    <string name="tab_developer">Dev</string>
+    <string name="tab_developer">Test</string>
 
     <!-- Customization extras -->
     <string name="color_caption">The phone app also tints itself with this colour.</string>

@@ -3,6 +3,8 @@
     <string name="notif_access">Conceder acesso às notificações</string>
     <string name="setup_title">Falta um passo</string>
     <string name="setup_body">O Steer precisa de acesso às notificações para ler a navegação do teu mapa e enviá-la para o relógio.</string>
+    <string name="restricted_help_title">Interruptor a cinzento?</string>
+    <string name="restricted_help_body">Como o Steer é instalado a partir do GitHub (não da Play Store), o Android 13+ bloqueia por defeito o acesso às notificações (\"Definições restritas\"). Para permitir:\n\n1. Abre Definições → Apps → Steer.\n2. Toca no menu ⋮ (canto superior direito) → Permitir definições restritas e confirma com o PIN ou impressão digital.\n3. Volta aqui e toca no botão acima — o interruptor deixa de estar a cinzento.</string>
     <string name="send_mock">Enviar navegação de teste</string>
     <string name="mock_sent">Enviado para o relógio</string>
     <string name="watch_connected">Relógio ligado</string>
@@ -36,6 +38,8 @@
     <string name="nav_app_auto">Auto</string>
     <string name="nav_app_maps">Maps</string>
     <string name="nav_app_osmand">OsmAnd</string>
+    <string name="nav_app_organic">Organic</string>
+    <string name="nav_app_comaps">CoMaps</string>
     <string name="overlay_grant">Permitir abrir sobre outras apps</string>
     <string name="overlay_caption">Para iniciar a navegação diretamente a partir do relógio, o Steer precisa de permissão para abrir apps em segundo plano. Sem ela, recebes uma notificação para tocar e abrir.</string>
     <string name="nav_launch_title">Navegar para %1$s</string>
@@ -47,8 +51,8 @@
     <string name="units_auto">Automático</string>
     <string name="units_metric">km</string>
     <string name="units_imperial">mi</string>
-    <string name="open_developer">Modo programador</string>
-    <string name="developer_title">Modo programador</string>
+    <string name="open_developer">Modo de teste</string>
+    <string name="developer_title">Modo de teste</string>
     <string name="preview_distance">200 M</string>
     <string name="preview_instruction">Junction 1 A20 / N114 A2 A6 A13 Santarém</string>
     <string name="preview_caption">Pré-visualização do ecrã do relógio</string>
@@ -97,7 +101,7 @@
     <string name="tab_home">Início</string>
     <string name="tab_customization">Estilo</string>
     <string name="tab_favourites">Favs</string>
-    <string name="tab_developer">Dev</string>
+    <string name="tab_developer">Teste</string>
 
     <!-- Personalização -->
     <string name="color_caption">A app do telemóvel também se pinta com esta cor.</string>
