@@ -86,6 +86,15 @@ object PebbleEmitter {
             dict.addUint32(NavKeys.NAV_BG_COLOR, NavPrefs.getBgColor(context) and 0xFFFFFF)
             // Settings sync: let the watch know whether to buzz on each new maneuver.
             dict.addUint8(NavKeys.NAV_VIBE_ON_TURN, (if (NavPrefs.isVibeOnTurn(context)) 1 else 0).toByte())
+            // Settings sync: large-text (accessibility) mode for the street/ETA text.
+            dict.addUint8(NavKeys.NAV_TEXT_SIZE, (if (NavPrefs.isLargeWatchText(context)) 1 else 0).toByte())
+        }
+    }
+
+    /** Pushes the large-text setting on its own (right after the user toggles it). */
+    fun sendTextSize(context: Context) {
+        send(context, "textSize") {
+            it.addUint8(NavKeys.NAV_TEXT_SIZE, (if (NavPrefs.isLargeWatchText(context)) 1 else 0).toByte())
         }
     }
 

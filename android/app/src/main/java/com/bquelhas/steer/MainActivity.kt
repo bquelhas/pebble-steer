@@ -234,6 +234,14 @@ class MainActivity : AppCompatActivity() {
             PebbleEmitter.sendVibeOnTurn(applicationContext)
         }
 
+        // Accessibility: large street/ETA text on the watch (synced + persisted there).
+        val largeText = root.findViewById<SwitchCompat>(R.id.switchLargeText)
+        largeText.isChecked = NavPrefs.isLargeWatchText(applicationContext)
+        largeText.setOnCheckedChangeListener { _, checked ->
+            NavPrefs.setLargeWatchText(applicationContext, checked)
+            PebbleEmitter.sendTextSize(applicationContext)
+        }
+
         setupSpeedControls(root)
         setupUnitsToggle(root)
         setupEtaToggle(root)

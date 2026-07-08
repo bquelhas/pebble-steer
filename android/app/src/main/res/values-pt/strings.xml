@@ -54,6 +54,7 @@
     <string name="eta_label">Mostrar ETA</string>
     <string name="eta_arrival">Hora de chegada</string>
     <string name="eta_remaining">Tempo restante</string>
+    <string name="large_text_label">Texto grande no relógio</string>
     <string name="open_developer">Modo de teste</string>
     <string name="developer_title">Modo de teste</string>
     <string name="preview_distance">200 M</string>

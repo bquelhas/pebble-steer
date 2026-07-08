@@ -445,6 +445,16 @@
                 android:text="@string/eta_remaining" />
         </com.google.android.material.button.MaterialButtonToggleGroup>
 
+        <!-- Accessibility: bigger street/ETA text on the watch -->
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/switchLargeText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:fontFamily="sans-serif-condensed"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:text="@string/large_text_label" />
+
         <!-- Which navigator notifications to read (multiselect) -->
         <TextView
             android:layout_width="wrap_content"

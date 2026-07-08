@@ -49,6 +49,7 @@
       "NAV_SPEED_LIMIT": 18,
       "NAV_ROUTE_MODE": 19,
       "NAV_VIBE_NOW": 20,
+      "NAV_TEXT_SIZE": 21,
       "NAV_CANCEL": 99
     },
     "resources": {

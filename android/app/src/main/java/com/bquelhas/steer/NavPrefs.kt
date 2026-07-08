@@ -16,6 +16,7 @@ object NavPrefs {
     private const val KEY_AUTOLAUNCH = "autolaunch"
     private const val KEY_BG_COLOR = "bg_color"
     private const val KEY_VIBE_ON_TURN = "vibe_on_turn"
+    private const val KEY_LARGE_WATCH_TEXT = "large_watch_text"
     private const val KEY_DEBUG_TESTS = "debug_tests"
     private const val KEY_SPEEDOMETER_MODE = "speedometer_mode"
     private const val KEY_ACTIVE_MODE = "active_mode"
@@ -60,6 +61,14 @@ object NavPrefs {
 
     fun setVibeOnTurn(context: Context, enabled: Boolean) {
         prefs(context).edit().putBoolean(KEY_VIBE_ON_TURN, enabled).apply()
+    }
+
+    /** Accessibility: draw the watch street text + ETA one font step larger (NAV_TEXT_SIZE). */
+    fun isLargeWatchText(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_LARGE_WATCH_TEXT, false)
+
+    fun setLargeWatchText(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean(KEY_LARGE_WATCH_TEXT, enabled).apply()
     }
 
     /**

@@ -110,6 +110,10 @@ static char s_eta_text[16] = "--:--";
 static char s_gps_text[32] = "GPS: ---";
 static int s_maneuver_index = -1;  // -1 means no active maneuver, show chevron
 static bool s_vibe_on_turn = true;
+// Accessibility: draw the street/instruction text one font step larger. Synced from the
+// phone (NAV_TEXT_SIZE) and persisted so it survives without the phone connected.
+static bool s_large_text = false;
+#define PERSIST_KEY_LARGE_TEXT 102
 static bool s_speed_alert_active = false;
 static uint8_t s_speed_limit = 0;
 static int s_current_speed = -1;   // current speed in km/h from the phone GPS; -1 = unknown
@@ -578,6 +582,7 @@ static void prv_draw_procedural_arrow(GContext *ctx, GRect bounds, int index) {
   #define ETA_RELATIVE_RECT         GRect(20, 121, 140, 16)
   #define DISTANCE_FONT    FONT_KEY_LECO_32_BOLD_NUMBERS
   #define STREET_FONT      FONT_KEY_GOTHIC_18_BOLD
+  #define STREET_FONT_LARGE FONT_KEY_GOTHIC_24_BOLD
 #elif defined(PBL_PLATFORM_EMERY)
   // Emery: 200x228 rectangular screen
   #define STATUS_BAR_RECT           GRect(0, 0, 200, 24)
@@ -587,6 +592,7 @@ static void prv_draw_procedural_arrow(GContext *ctx, GRect bounds, int index) {
   #define STREET_RELATIVE_RECT      GRect(8, 90, 184, 108)
   #define DISTANCE_FONT    FONT_KEY_LECO_38_BOLD_NUMBERS
   #define STREET_FONT      FONT_KEY_GOTHIC_24_BOLD
+  #define STREET_FONT_LARGE FONT_KEY_GOTHIC_28_BOLD
 #else
   // Basalt / Aplite / Diorite: 144x168 rectangular screen
   #define STATUS_BAR_RECT           GRect(0, 0, 144, 18)
@@ -596,7 +602,28 @@ static void prv_draw_procedural_arrow(GContext *ctx, GRect bounds, int index) {
   #define STREET_RELATIVE_RECT      GRect(6, 56, 132, 90)
   #define DISTANCE_FONT    FONT_KEY_LECO_32_BOLD_NUMBERS
   #define STREET_FONT      FONT_KEY_GOTHIC_18_BOLD
+  #define STREET_FONT_LARGE FONT_KEY_GOTHIC_24_BOLD
 #endif
+
+// Height of the big bottom ETA line in large-text mode (rectangular watches; the ETA
+// leaves the top status bar and gets its own line, drawn with STREET_FONT_LARGE).
+#if defined(PBL_PLATFORM_EMERY)
+  #define ETA_LINE_HEIGHT 30
+#else
+  #define ETA_LINE_HEIGHT 26
+#endif
+
+// Street/instruction block. In large-text mode on rectangular watches a bottom slice is
+// carved out for the big ETA line; chalk keeps its own dedicated bottom ETA rect.
+static GRect prv_street_rect(void) {
+  GRect r = STREET_RELATIVE_RECT;
+#if !defined(PBL_ROUND)
+  if (s_large_text) {
+    r.size.h -= ETA_LINE_HEIGHT;
+  }
+#endif
+  return r;
+}
 
 // Custom drawing procedures for backgrounds and status bar
 static void prv_bg_update_proc(Layer *layer, GContext *ctx) {
@@ -625,7 +652,9 @@ static void prv_status_bar_update_proc(Layer *layer, GContext *ctx) {
   GRect eta_rect;
   GTextAlignment time_align = GTextAlignmentCenter;
   GTextAlignment eta_align = GTextAlignmentRight;
-  const char *draw_eta = s_eta_text;
+  // Large-text mode: the ETA moves to its own big bottom line (see the panel proc);
+  // the top bar keeps only the clock at its normal size.
+  const char *draw_eta = s_large_text ? NULL : s_eta_text;
 
 #if defined(PBL_ROUND)
   time_rect = GRect((180 - 60) / 2, (bounds.size.h - 16) / 2 - 1, 60, 16);
@@ -944,7 +973,7 @@ static void prv_draw_distance(GContext *ctx, GRect bounds, int offset_x, const c
 }
 
 static void prv_draw_street(GContext *ctx, GRect bounds, int offset_x, const char *street_text, GColor bg_color, GRect clip_rect) {
-  GFont font = fonts_get_system_font(STREET_FONT);
+  GFont font = fonts_get_system_font(s_large_text ? STREET_FONT_LARGE : STREET_FONT);
   
   GTextAlignment alignment = GTextAlignmentLeft;
 #if defined(PBL_ROUND)
@@ -1362,7 +1391,7 @@ static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
 
       // Draw old text
       GRect old_dist_rect = DISTANCE_RELATIVE_RECT; old_dist_rect.origin.y += text_dy;
-      GRect old_street_rect = STREET_RELATIVE_RECT; old_street_rect.origin.y += text_dy;
+      GRect old_street_rect = prv_street_rect(); old_street_rect.origin.y += text_dy;
       prv_draw_distance(ctx, old_dist_rect, 0, s_prev_distance_text, old_bg_resolved, bounds);
       
       if (STEER_SHOW_SPEEDOMETER && s_current_speed >= 0) {
@@ -1388,7 +1417,7 @@ static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
 
       // Draw new text
       GRect new_dist_rect = DISTANCE_RELATIVE_RECT; new_dist_rect.origin.y += text_dy;
-      GRect new_street_rect = STREET_RELATIVE_RECT; new_street_rect.origin.y += text_dy;
+      GRect new_street_rect = prv_street_rect(); new_street_rect.origin.y += text_dy;
       prv_draw_distance(ctx, new_dist_rect, 0, s_distance_text, new_bg_resolved, bounds);
       
       if (STEER_SHOW_SPEEDOMETER && s_current_speed >= 0) {
@@ -1440,7 +1469,7 @@ static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
 
     GRect old_icon_rect = GRect(ICON_RELATIVE_RECT.origin.x + dxo, ICON_RELATIVE_RECT.origin.y + dyo, ICON_RELATIVE_RECT.size.w, ICON_RELATIVE_RECT.size.h);
     GRect old_dist_rect = GRect(DISTANCE_RELATIVE_RECT.origin.x + dxo, DISTANCE_RELATIVE_RECT.origin.y + dyo, DISTANCE_RELATIVE_RECT.size.w, DISTANCE_RELATIVE_RECT.size.h);
-    GRect old_street_rect = GRect(STREET_RELATIVE_RECT.origin.x + dxo, STREET_RELATIVE_RECT.origin.y + dyo, STREET_RELATIVE_RECT.size.w, STREET_RELATIVE_RECT.size.h);
+    GRect old_street_rect = GRect(prv_street_rect().origin.x + dxo, prv_street_rect().origin.y + dyo, prv_street_rect().size.w, prv_street_rect().size.h);
 
     prv_draw_icon(ctx, old_icon_rect, 0, s_prev_has_forwarded, s_prev_forwarded_icon_bytes, s_prev_pdc_image, s_prev_maneuver_index, 100);
     prv_draw_distance(ctx, old_dist_rect, 0, s_prev_distance_text, old_bg_resolved, old_bounds);
@@ -1459,7 +1488,7 @@ static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
 
     GRect new_icon_rect = GRect(ICON_RELATIVE_RECT.origin.x + dxi, ICON_RELATIVE_RECT.origin.y + dyi, ICON_RELATIVE_RECT.size.w, ICON_RELATIVE_RECT.size.h);
     GRect new_dist_rect = GRect(DISTANCE_RELATIVE_RECT.origin.x + dxt, DISTANCE_RELATIVE_RECT.origin.y + dyt, DISTANCE_RELATIVE_RECT.size.w, DISTANCE_RELATIVE_RECT.size.h);
-    GRect new_street_rect = GRect(STREET_RELATIVE_RECT.origin.x + dxt, STREET_RELATIVE_RECT.origin.y + dyt, STREET_RELATIVE_RECT.size.w, STREET_RELATIVE_RECT.size.h);
+    GRect new_street_rect = GRect(prv_street_rect().origin.x + dxt, prv_street_rect().origin.y + dyt, prv_street_rect().size.w, prv_street_rect().size.h);
 
     prv_draw_icon(ctx, new_icon_rect, 0, s_has_forwarded_icon, s_forwarded_icon_bytes, s_active_pdc_image, s_maneuver_index, 100);
     prv_draw_distance(ctx, new_dist_rect, 0, s_distance_text, new_bg_resolved, new_bounds);
@@ -1491,19 +1520,33 @@ static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
     }
 #endif
     if (STEER_SHOW_SPEEDOMETER && s_current_speed >= 0) {
-      prv_draw_speedometer(ctx, STREET_RELATIVE_RECT, bg_resolved, bounds);
+      prv_draw_speedometer(ctx, prv_street_rect(), bg_resolved, bounds);
     } else {
-      prv_draw_street(ctx, STREET_RELATIVE_RECT, 0, s_street_text, bg_resolved, bounds);
+      prv_draw_street(ctx, prv_street_rect(), 0, s_street_text, bg_resolved, bounds);
     }
   }
 
 #if defined(PBL_ROUND)
-  // Draw ETA centered near the bottom of circular screens (Chalk)
+  // Draw ETA centered near the bottom of circular screens (Chalk). In large-text
+  // mode it steps up a font size (the rect grows upward to fit).
   if (s_eta_text[0] != '\0') {
     GColor eta_color = prv_distance_fg_for_bg(prv_resolve_bg_color(s_bg_color));
     graphics_context_set_text_color(ctx, eta_color);
-    GFont eta_font = fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD);
-    graphics_draw_text(ctx, s_eta_text, eta_font, ETA_RELATIVE_RECT, 
+    GFont eta_font = fonts_get_system_font(s_large_text ? FONT_KEY_GOTHIC_18_BOLD
+                                                        : FONT_KEY_GOTHIC_14_BOLD);
+    GRect eta_rect = s_large_text ? GRect(20, 117, 140, 22) : ETA_RELATIVE_RECT;
+    graphics_draw_text(ctx, s_eta_text, eta_font, eta_rect,
+                       GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  }
+#else
+  // Large-text mode on rectangular watches: the ETA leaves the top status bar and
+  // gets its own big bottom line (same large font as the street), as on Chalk.
+  if (s_large_text && s_eta_text[0] != '\0') {
+    GColor eta_color = prv_distance_fg_for_bg(prv_resolve_bg_color(s_bg_color));
+    graphics_context_set_text_color(ctx, eta_color);
+    GFont eta_font = fonts_get_system_font(STREET_FONT_LARGE);
+    GRect eta_rect = GRect(0, bounds.size.h - ETA_LINE_HEIGHT, bounds.size.w, ETA_LINE_HEIGHT - 2);
+    graphics_draw_text(ctx, s_eta_text, eta_font, eta_rect,
                        GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   }
 #endif
@@ -2307,6 +2350,19 @@ static void inbox_received_handler(DictionaryIterator *iterator, void *context) 
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Parsed NAV_VIBE_ON_TURN: %d", s_vibe_on_turn);
   }
 
+  // Settings sync: large-text mode (street + ETA one font step up, ETA on its own
+  // bottom line). Persisted so it applies without the phone on the next launch.
+  Tuple *text_size_t = dict_find(iterator, MESSAGE_KEY_NAV_TEXT_SIZE);
+  if (text_size_t) {
+    bool new_large = (text_size_t->value->uint8 != 0);
+    if (new_large != s_large_text) {
+      s_large_text = new_large;
+      persist_write_bool(PERSIST_KEY_LARGE_TEXT, s_large_text);
+      needs_update = true;
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "Parsed NAV_TEXT_SIZE: %d", s_large_text);
+    }
+  }
+
   // Check speed warning alert
   Tuple *speed_alert_t = dict_find(iterator, MESSAGE_KEY_NAV_SPEED_ALERT);
   Tuple *speed_limit_t = dict_find(iterator, MESSAGE_KEY_NAV_SPEED_LIMIT);
@@ -2831,6 +2887,10 @@ static void prv_window_unload(Window *window) {
 }
 
 static void prv_init(void) {
+  // Restore the large-text preference (also synced from the phone on each nav frame).
+  if (persist_exists(PERSIST_KEY_LARGE_TEXT)) {
+    s_large_text = persist_read_bool(PERSIST_KEY_LARGE_TEXT);
+  }
   // Load persisted favorites if they exist
   if (persist_exists(PERSIST_KEY_FAV_COUNT)) {
     s_fav_count = persist_read_int(PERSIST_KEY_FAV_COUNT);

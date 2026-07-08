@@ -57,6 +57,7 @@
     <string name="eta_label">ETA display</string>
     <string name="eta_arrival">Arrival time</string>
     <string name="eta_remaining">Time left</string>
+    <string name="large_text_label">Large text on the watch</string>
     <string name="open_developer">Test mode</string>
     <string name="developer_title">Test mode</string>
     <string name="preview_distance">200 M</string>

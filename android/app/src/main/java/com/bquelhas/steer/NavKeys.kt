@@ -64,5 +64,9 @@ object NavKeys {
                                     // speed, with segment-length and legacy fallbacks) and fires
                                     // this once per maneuver; the watch just executes the pulse
                                     // (still gated by NAV_VIBE_ON_TURN as a safety).
+    const val NAV_TEXT_SIZE = 21    // uint8: 0 normal / 1 large. Accessibility — the watch draws
+                                    // the street text one font step bigger and moves the ETA to a
+                                    // big bottom line (the top bar keeps only the clock). Sent with
+                                    // each nav frame and on toggle; the watch persists it.
     const val NAV_CANCEL = 99       // uint8: navigation stopped / clear display
 }
