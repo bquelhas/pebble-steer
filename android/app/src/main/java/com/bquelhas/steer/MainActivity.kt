@@ -669,6 +669,25 @@ class MainActivity : AppCompatActivity() {
 
     // --- Developer page ---
 
+    /** Shares the in-app navigation log (Test tab) so a user without adb can send it. */
+    private fun shareNavLog() {
+        if (NavLog.isEmpty()) {
+            Toast.makeText(this, R.string.share_log_empty, Toast.LENGTH_LONG).show()
+            return
+        }
+        val version = try {
+            val pi = packageManager.getPackageInfo(packageName, 0)
+            "app ${pi.versionName} (${androidx.core.content.pm.PackageInfoCompat.getLongVersionCode(pi)})"
+        } catch (_: Exception) { "app ?" }
+        val body = "Steer navigation log\n$version\n\n${NavLog.dump()}"
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, getString(R.string.share_log_subject))
+            putExtra(Intent.EXTRA_TEXT, body)
+        }
+        startActivity(Intent.createChooser(send, getString(R.string.share_log)))
+    }
+
     private fun bindDeveloperPage(root: View) {
         devRoot = root
 
@@ -696,6 +715,7 @@ class MainActivity : AppCompatActivity() {
         val btnSign = root.findViewById<Button>(R.id.btnTestSpeedSign)
         btnSign.setOnClickListener { toggleSpeedSignTest(btnSign) }
         updateSpeedSignButton(btnSign)
+        root.findViewById<Button>(R.id.btnShareLog).setOnClickListener { shareNavLog() }
         root.findViewById<Button>(R.id.btnInstallPbw).setOnClickListener {
             when {
                 !PbwInstaller.isBundled(applicationContext) ->

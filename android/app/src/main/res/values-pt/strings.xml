@@ -82,6 +82,10 @@
     <string name="mock_nav_caption">Mostra o ícone real do Google Maps numa notificação e passa-o pelo classificador (como nas notificações reais). Envia para o relógio a manobra que LEMOS — para auditar a leitura de cada ícone, um a um.</string>
     <string name="open_mock_nav">Navegação falsa (debug)</string>
     <string name="test_speed_sign">Testar sinal de velocidade no relógio</string>
+    <string name="share_log">Partilhar registo de navegação</string>
+    <string name="share_log_caption">Regista o que o Steer leu das notificações do mapa nesta sessão. Partilha depois de uma manobra correr mal, para se poder diagnosticar.</string>
+    <string name="share_log_subject">Registo de navegação do Steer</string>
+    <string name="share_log_empty">Ainda não há navegação registada — inicia primeiro uma rota.</string>
     <string name="clear_speed_sign">Limpar sinal de velocidade</string>
     <string name="mock_dist_hint">Distância (ex.: 300 m)</string>
     <string name="mock_dist_default">300 m</string>

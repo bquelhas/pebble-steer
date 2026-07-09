@@ -103,6 +103,24 @@
             android:text="@string/test_speed_sign" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnShareLog"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:fontFamily="sans-serif-condensed"
+            app:icon="@android:drawable/ic_menu_share"
+            android:text="@string/share_log" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:fontFamily="sans-serif-condensed"
+            android:text="@string/share_log_caption"
+            android:textAppearance="?attr/textAppearanceBodySmall" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnInstallPbw"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

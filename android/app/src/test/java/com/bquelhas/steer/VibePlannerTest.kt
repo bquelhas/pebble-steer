@@ -1,6 +1,8 @@
 package com.bquelhas.steer
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -12,74 +14,90 @@ class VibePlannerTest {
 
     @Before fun clean() = VibePlanner.reset()
 
-    private fun update(dist: Double?, speed: Int, dir: Int = LEFT, street: String = "Rua A"): Boolean {
-        val text = if (dist != null) "${dist.toInt()} m — $street" else street
-        return VibePlanner.onUpdate(dir, text, dist, speed)
+    /** Simulates an approach at a constant speed; returns the distance (m) at which it buzzed. */
+    private fun approachBuzzDistance(startM: Double, speedKmh: Double, gps: Int, stepS: Double): Double? {
+        VibePlanner.reset()
+        val mps = speedKmh / 3.6
+        var d = startM
+        var t = 0L
+        while (d > 0) {
+            if (VibePlanner.onUpdate(LEFT, "${d.toInt()} m — Rua X", d, gps, t)) return d
+            d -= mps * stepS
+            t += (stepS * 1000).toLong()
+        }
+        return null
     }
 
-    // 1) TIME path: at 120 km/h the lead is 25 s ≈ 833 m — motorway exits buzz far out.
-    @Test fun motorwaySpeedBuzzesFarFromExit() {
-        assertFalse(update(5000.0, 120))
-        assertFalse(update(2000.0, 120))
-        assertFalse(update(900.0, 120))   // 900 > 833
-        assertTrue(update(800.0, 120))    // crossed the 25 s line
-        assertFalse(update(500.0, 120))   // latched: one buzz per maneuver
-        assertFalse(update(50.0, 120))
+    // DERIVED speed (no GPS): a motorway approach (distance shrinking fast) buzzes far out,
+    // ~800 m — not the 200/400 m the old distance-buckets gave.
+    @Test fun motorwayViaDerivedSpeedBuzzesFarOut() {
+        val d = approachBuzzDistance(startM = 2500.0, speedKmh = 120.0, gps = -1, stepS = 2.0)
+        assertNotNull("should buzz", d)
+        assertTrue("motorway buzz should be far out (~800 m), was $d", d!! in 700.0..950.0)
     }
 
-    // TIME path: in town at 40 km/h the same 25 s is only ~278 m.
-    @Test fun citySpeedBuzzesClose() {
-        assertFalse(update(500.0, 40))
-        assertTrue(update(270.0, 40))
+    // DERIVED speed (no GPS): a town approach buzzes close, ~280 m.
+    @Test fun cityViaDerivedSpeedBuzzesClose() {
+        val d = approachBuzzDistance(startM = 500.0, speedKmh = 40.0, gps = -1, stepS = 1.0)
+        assertNotNull(d)
+        assertTrue("city buzz ~280 m, was $d", d!! in 220.0..340.0)
     }
 
-    // TIME path: walking speeds clamp to the 50 m floor so the buzz isn't uselessly early.
-    @Test fun walkingClampsToMinLead() {
-        assertFalse(update(100.0, 4))
-        assertTrue(update(45.0, 4))
+    // GPS speed, when present, drives the lead directly.
+    @Test fun gpsSpeedDrivesLead() {
+        val d = approachBuzzDistance(startM = 1500.0, speedKmh = 5.0, gps = 100, stepS = 2.0)
+        assertNotNull(d)
+        assertTrue("100 km/h -> ~695 m, was $d", d!! in 620.0..760.0)
     }
 
-    // 2) SEGMENT fallback: no speed, a 15 km announcement means motorway -> 700 m lead.
-    @Test fun noSpeedMotorwaySegmentBucket() {
-        assertFalse(update(15000.0, -1))
-        assertFalse(update(800.0, -1))
-        assertTrue(update(690.0, -1))
+    // A maneuver that appears already within the lead buzzes immediately (Bruno's ask).
+    @Test fun newManeuverAppearingCloseBuzzesAtOnce() {
+        assertTrue(VibePlanner.onUpdate(LEFT, "80 m — Rua Z", 80.0, -1, 0L))
     }
 
-    // SEGMENT fallback: a short 900 m street segment -> 200 m lead.
-    @Test fun noSpeedStreetSegmentBucket() {
-        assertFalse(update(900.0, -1))
-        assertFalse(update(300.0, -1))
-        assertTrue(update(190.0, -1))
+    // A reroute (distance jumps back up on the same road) re-arms and buzzes again.
+    @Test fun rerouteBuzzesAgain() {
+        assertFalse(VibePlanner.onUpdate(LEFT, "300 m — Rua A", 300.0, -1, 0L))
+        assertTrue(VibePlanner.onUpdate(LEFT, "250 m — Rua A", 250.0, -1, 2_000L))   // buzz #1
+        assertFalse(VibePlanner.onUpdate(LEFT, "600 m — Rua A", 600.0, -1, 4_000L))  // reroute, re-arm
+        assertTrue(VibePlanner.onUpdate(LEFT, "550 m — Rua A", 550.0, -1, 6_000L))   // buzz #2
     }
 
-    // 3) LEGACY fallback: no distance at all -> one buzz per new instruction, like before.
+    // A brand-new maneuver (different street) buzzes even right after the previous one.
+    @Test fun newManeuverRightAfterPreviousBuzzes() {
+        assertTrue(VibePlanner.onUpdate(LEFT, "120 m — Rua A", 120.0, -1, 0L))
+        assertTrue(VibePlanner.onUpdate(STRAIGHT, "90 m — Rua B", 90.0, -1, 1_000L))
+    }
+
+    // The same maneuver counting down buzzes exactly once.
+    @Test fun sameManeuverBuzzesOnce() {
+        var buzzes = 0
+        var d = 400
+        var t = 0L
+        while (d >= 20) {
+            if (VibePlanner.onUpdate(LEFT, "$d m — Rua X", d.toDouble(), 40, t)) buzzes++
+            d -= 10; t += 1_000L
+        }
+        assertEquals(1, buzzes)
+    }
+
+    // The user's report: the distance lives INSIDE the instruction text and changes each
+    // tick. Identity must ignore it -> exactly one buzz, not one per 10 m.
+    @Test fun distanceInsideInstructionStillOneBuzz() {
+        var buzzes = 0
+        var d = 300
+        var t = 0L
+        while (d >= 20) {
+            if (VibePlanner.onUpdate(LEFT, "In $d m turn left onto Rua X", d.toDouble(), 40, t)) buzzes++
+            d -= 10; t += 1_000L
+        }
+        assertEquals(1, buzzes)
+    }
+
+    // Legacy path (no parseable distance): one buzz per new instruction.
     @Test fun noDistanceBuzzesOncePerInstruction() {
-        assertTrue(update(null, -1, street = "Turn left"))
-        assertFalse(update(null, -1, street = "Turn left"))
-        assertTrue(update(null, -1, street = "Turn right"))
-    }
-
-    // A reroute (distance jumps back up on the same instruction) re-arms the latch.
-    @Test fun rerouteRearmsTheLatch() {
-        assertFalse(update(400.0, 50))    // lead at 50 km/h ≈ 347 m
-        assertTrue(update(340.0, 50))
-        assertFalse(update(2000.0, 50))   // reroute: same street, distance jumped up
-        assertTrue(update(340.0, 50))     // buzzes again for the new approach
-    }
-
-    // A new maneuver re-arms; small GPS wobble upward does NOT.
-    @Test fun newManeuverRearmsButWobbleDoesNot() {
-        assertTrue(update(200.0, 50, street = "Rua A"))
-        assertFalse(update(230.0, 50, street = "Rua A"))  // +30 m wobble, still latched
-        assertFalse(update(3000.0, 50, street = "Rua B", dir = STRAIGHT))
-        assertTrue(update(300.0, 50, street = "Rua B", dir = STRAIGHT))
-    }
-
-    // The countdown embedded in the display text must not change the maneuver identity.
-    @Test fun distanceCountdownKeepsIdentity() {
-        assertFalse(VibePlanner.onUpdate(LEFT, "500 m — Rua X", 500.0, 40))
-        assertTrue(VibePlanner.onUpdate(LEFT, "250 m — Rua X", 250.0, 40))
-        assertFalse(VibePlanner.onUpdate(LEFT, "100 m — Rua X", 100.0, 40))
+        assertTrue(VibePlanner.onUpdate(LEFT, "Turn left", null, -1, 0L))
+        assertFalse(VibePlanner.onUpdate(LEFT, "Turn left", null, -1, 1_000L))
+        assertTrue(VibePlanner.onUpdate(STRAIGHT, "Turn right", null, -1, 2_000L))
     }
 }

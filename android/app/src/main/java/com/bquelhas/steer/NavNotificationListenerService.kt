@@ -69,10 +69,11 @@ class NavNotificationListenerService : NotificationListenerService() {
 
         Log.d(TAG, "notif from $pkg title='$title' text='$text' subText='$subText'")
 
+        val etaMode = NavPrefs.getEtaMode(applicationContext)
         var data = NaviParser.parse(
             pkg, title, text, subText,
             NavPrefs.getUnitSystem(applicationContext),
-            NavPrefs.getEtaMode(applicationContext),
+            etaMode,
         ) ?: return
 
         // A live nav update arrived: cancel any pending session-end so a Maps notification
@@ -115,11 +116,20 @@ class NavNotificationListenerService : NotificationListenerService() {
 
         // Smart vibration: evaluated on EVERY update (before the de-dup — the display text
         // can be unchanged while the buzz threshold is crossed by a speed change).
-        if (NavPrefs.isVibeOnTurn(applicationContext) &&
-            VibePlanner.onUpdate(data.directionId, data.instructionText, data.distanceMeters,
-                SpeedProvider.currentSpeedKmh())) {
-            PebbleEmitter.sendVibeNow(applicationContext)
-        }
+        val speedKmh = SpeedProvider.currentSpeedKmh()
+        val buzz = NavPrefs.isVibeOnTurn(applicationContext) &&
+            VibePlanner.onUpdate(data.directionId, data.instructionText, data.distanceMeters, speedKmh)
+        if (buzz) PebbleEmitter.sendVibeNow(applicationContext)
+
+        // One structured line per nav update — for `adb logcat -s NavMe/Listener` AND the
+        // in-app "Share nav log" button (Test tab), so a user without adb can send it.
+        // Carries the raw notification text plus everything we derived.
+        val logLine = "pkg=$pkg dir=${data.direction} dist=" +
+            (data.distanceMeters?.let { "%.0f".format(it) } ?: "?") + "m speed=${speedKmh}km/h " +
+            "eta='${data.eta}' etaMode=$etaMode buzz=$buzz | " +
+            "title='$title' text='$text' subText='$subText'"
+        Log.i(TAG, "nav: $logLine")
+        NavLog.add(logLine)
 
         // Keep the session snapshot fresh so a watchapp (re)launch mid-route can replay
         // the current maneuver instead of waiting for the next notification update.

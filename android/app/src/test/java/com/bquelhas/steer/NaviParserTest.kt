@@ -78,6 +78,35 @@ class NaviParserTest {
         assertEquals(null, gmaps("Turn left", null)!!.distanceMeters)
     }
 
+    // --- ETA: "time left" honoured even when the notification only has the arrival clock ---
+
+    @Test fun remainingUsesExplicitDurationWhenPresent() {
+        assertEquals("6 min",
+            NaviParser.extractEtaField("6 min · 1.7 km · 20:09", EtaMode.REMAINING, nowMinutes = 20 * 60))
+    }
+
+    @Test fun remainingDerivedFromArrivalClockWhenNoDurationToken() {
+        // subText has the arrival clock but no "X min" token; at 19:51 -> 18 min left.
+        assertEquals("18 min",
+            NaviParser.extractEtaField("20:09 ETA · 1.7 km", EtaMode.REMAINING, nowMinutes = 19 * 60 + 51))
+    }
+
+    @Test fun remainingDerivedAcrossTheHour() {
+        // now 10:12, arrival 11:30 -> 1 h 18 min.
+        assertEquals("1 h 18 min",
+            NaviParser.remainingFromArrival("11:30", 10 * 60 + 12))
+    }
+
+    @Test fun remainingHandlesAfterMidnightArrival() {
+        // now 23:50, arrival 00:10 -> 20 min (wraps past midnight).
+        assertEquals("20 min", NaviParser.remainingFromArrival("00:10", 23 * 60 + 50))
+    }
+
+    @Test fun arrivalModeStillShowsClock() {
+        assertEquals("20:09",
+            NaviParser.extractEtaField("6 min · 1.7 km · 20:09", EtaMode.ARRIVAL, nowMinutes = 20 * 60))
+    }
+
     // --- international units ---
 
     @Test fun autoKeepsImperialSource() {

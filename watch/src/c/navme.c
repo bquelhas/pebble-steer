@@ -1233,7 +1233,10 @@ static void prv_dg_timer_cb(void *ctx) {
 
 // Begin a digit morph from old_text -> new_text. Only pure-digit numbers with an unchanged
 // unit qualify (so street/decimal/unit-cross cases fall back to a plain redraw).
-#define DG_ANIM_ENABLED 1
+// Disabled by request 2026-07-08: the distance-countdown digit squash animation is off, so
+// the number just redraws cleanly. The whole morph implementation is kept intact — flip this
+// back to 1 to bring the animation back.
+#define DG_ANIM_ENABLED 0
 
 static void prv_dg_start(const char *old_text, const char *new_text) {
   if (!DG_ANIM_ENABLED) return;

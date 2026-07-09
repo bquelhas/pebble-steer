@@ -82,6 +82,15 @@ object NaviParser {
     fun distanceMetersOf(s: String?): Double? = s?.let { parseDistanceMeters(it)?.meters }
 
     /**
+     * Stable identity of an instruction for [VibePlanner], independent of the live countdown.
+     * Every distance token is stripped and case/whitespace normalized, so "In 250 m turn left"
+     * and "In 240 m turn left" collapse to the same key — otherwise the per-maneuver vibration
+     * latch re-arms on every distance tick and the watch buzzes every few metres.
+     */
+    fun instructionKey(text: String): String =
+        text.replace(DISTANCE_RE, " ").replace(WHITESPACE_RE, " ").trim().lowercase()
+
+    /**
      * Extracts the arrival clock time from the notification subText, e.g.
      * "6 min · 1.7 km · 20:09 ETA" -> "20:09" (English) or
      * "6 min · 1,7 km · Chegada às 20:09" -> "20:09" (Portuguese). Locale-agnostic:
@@ -106,11 +115,59 @@ object NaviParser {
         return REMAINING_RE.find(s)?.value?.replace(WHITESPACE_RE, " ")?.trim()
     }
 
-    /** Picks the ETA field the watch should display for the chosen [mode], with a graceful fallback. */
-    fun extractEtaField(subText: String?, mode: EtaMode): String? = when (mode) {
-        EtaMode.ARRIVAL -> extractEta(subText)
-        // If a route has no duration token, fall back to the arrival clock rather than showing nothing.
-        EtaMode.REMAINING -> extractRemaining(subText) ?: extractEta(subText)
+    /**
+     * Picks the ETA field the watch should display for the chosen [mode].
+     *
+     * REMAINING: prefer the notification's own duration token ("6 min"). Many Google Maps
+     * builds/locales only put the arrival CLOCK in the subText (no "X min"), which used to
+     * silently fall back to the arrival time — so "Time left" showed the arrival clock. Now
+     * we DERIVE the remaining time from that clock minus [nowMinutes], so the setting is
+     * honoured regardless of the notification format. Only if the arrival clock can't be
+     * parsed either do we show it verbatim.
+     */
+    fun extractEtaField(subText: String?, mode: EtaMode, nowMinutes: Int = currentMinuteOfDay()): String? =
+        when (mode) {
+            EtaMode.ARRIVAL -> extractEta(subText)
+            EtaMode.REMAINING ->
+                extractRemaining(subText)
+                    ?: extractEta(subText)?.let { arrival ->
+                        remainingFromArrival(arrival, nowMinutes) ?: arrival
+                    }
+        }
+
+    /** Minute-of-day right now (0..1439). Split out so [extractEtaField] stays unit-testable. */
+    private fun currentMinuteOfDay(): Int {
+        val c = java.util.Calendar.getInstance()
+        return c.get(java.util.Calendar.HOUR_OF_DAY) * 60 + c.get(java.util.Calendar.MINUTE)
+    }
+
+    private val CLOCK_PARSE_RE = Regex("""(\d{1,2}):(\d{2})\s*([AaPp][Mm])?""")
+
+    /** "20:09" / "8:09 PM" -> minute-of-day (0..1439), or null when it doesn't parse. */
+    private fun clockToMinutes(clock: String): Int? {
+        val m = CLOCK_PARSE_RE.find(clock) ?: return null
+        var h = m.groupValues[1].toIntOrNull() ?: return null
+        val min = m.groupValues[2].toIntOrNull() ?: return null
+        when (m.groupValues[3].lowercase()) {
+            "pm" -> if (h < 12) h += 12
+            "am" -> if (h == 12) h = 0
+        }
+        if (h > 23 || min > 59) return null
+        return h * 60 + min
+    }
+
+    /** Time from [nowMinutes] until the arrival [clock], formatted "6 min" / "1 h 6 min". */
+    fun remainingFromArrival(clock: String, nowMinutes: Int): String? {
+        val arrival = clockToMinutes(clock) ?: return null
+        var delta = arrival - nowMinutes
+        if (delta < 0) delta += 24 * 60          // arrival is after midnight
+        val h = delta / 60
+        val m = delta % 60
+        return when {
+            h == 0 -> "$m min"
+            m == 0 -> "$h h"
+            else -> "$h h $m min"
+        }
     }
 
     /**

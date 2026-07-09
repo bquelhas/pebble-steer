@@ -1,95 +1,122 @@
 package com.bquelhas.steer
 
 /**
- * Decides WHEN the watch should buzz for the upcoming maneuver — replacing the old
- * buzz-on-every-new-instruction with a single "get ready" warning per maneuver, fired
- * at a lead distance that adapts to how fast you are travelling.
+ * Decides WHEN the watch should buzz for the upcoming maneuver — a single "get ready"
+ * warning per maneuver, fired at a lead distance that adapts to how fast you're going.
  *
- * Cascade, best signal first:
- *  1. TIME — with a fresh GPS speed, buzz when time-to-maneuver (distance / speed)
- *     drops to [PREPARE_SECONDS]. At 120 km/h that is ~830 m before a motorway exit;
- *     at 40 km/h in town, ~280 m. Speed IS the road-type detector: no map data needed,
- *     and it adapts to traffic (a jammed motorway behaves like a street).
- *  2. SEGMENT LENGTH — no usable speed (tunnel, no location permission, cold GPS):
- *     bucket by the longest distance ever announced for this maneuver (~ the segment
- *     length). A "50 km until the exit" announcement can only mean a motorway.
- *  3. LEGACY — no parseable distance at all: buzz once when the instruction changes,
- *     exactly like the old behaviour.
+ * Speed source, best first:
+ *  1. GPS speed from [SpeedProvider], when location permission is granted.
+ *  2. DERIVED speed — how fast the announced distance is shrinking between notification
+ *     updates. Needs no permission and no map data: on a motorway the distance drops
+ *     ~33 m/s so the lead grows to ~800 m; in town it shrinks slowly so the lead is short.
+ *  3. When neither is available yet (the very first frame of a maneuver), a coarse bucket
+ *     by the distance at which the maneuver was first announced.
  *
- * One buzz per maneuver: a latch arms when the maneuver changes and REARMS when the
- * announced distance jumps back up (reroute, or the same instruction on a new leg).
- * State is process-wide and reset per navigation session by the listener service.
+ * With a usable speed the lead is speed × [PREPARE_SECONDS] (≈ 830 m at 120 km/h, ≈ 280 m
+ * at 40 km/h), clamped to [[MIN_LEAD_M], [MAX_LEAD_M]].
+ *
+ * One buzz per maneuver: a latch arms when the maneuver changes and re-arms on a reroute
+ * (the announced distance jumps back up) OR a new maneuver — both of which SHOULD buzz
+ * again, including a maneuver that appears already within the lead distance. The maneuver
+ * identity strips distances ([NaviParser.instructionKey]) so a live countdown embedded in
+ * the text isn't mistaken for a new maneuver. State is process-wide, reset per session.
  */
 object VibePlanner {
 
     /** Lead time of the "get ready" buzz. */
     private const val PREPARE_SECONDS = 25.0
 
-    /** Below this the GPS speed is parked/noise — fall through to the segment buckets. */
-    private const val MIN_SPEED_KMH = 3
+    /** Below this a speed reading is parked/noise. */
+    private const val MIN_SPEED_KMH = 3.0
 
-    /** Clamp of the speed-derived lead so walking still gets a usable warning and a
-     *  motorway sprint doesn't buzz absurdly early. */
+    /** Clamp of the speed-derived lead. */
     private const val MIN_LEAD_M = 50.0
     private const val MAX_LEAD_M = 1500.0
 
     /** A distance increase this large on the SAME instruction means a reroute / new leg. */
     private const val REARM_JUMP_M = 150.0
 
-    // Fallback 2: lead by announced segment length when speed is unavailable.
-    private const val SEG_MOTORWAY_M = 10_000.0
-    private const val SEG_ROAD_M = 2_000.0
+    // Derived-speed window: ignore deltas measured over an implausibly short/long gap.
+    private const val MIN_DT_S = 0.5
+    private const val MAX_DT_S = 90.0
+
+    // First-frame fallback: coarse lead by how far out the maneuver was first announced,
+    // used only until a speed estimate exists (or if a maneuver pops up already close).
+    private const val SEG_MOTORWAY_M = 3000.0
+    private const val SEG_ROAD_M = 1000.0
     private const val LEAD_MOTORWAY_M = 700.0
     private const val LEAD_ROAD_M = 400.0
     private const val LEAD_STREET_M = 200.0
 
     private var maneuverKey: String? = null
-    private var segmentMeters = 0.0
     private var buzzed = false
     private var lastDistance = 0.0
+    private var anchorDistance = 0.0   // distance when the current approach started
+    private var anchorTimeMs = 0L      // time when the current approach started
+    private var derivedSpeedKmh = -1.0 // speed inferred from the shrinking distance
 
     /** Clears all per-session state. Call at navigation session start and end. */
     @Synchronized
     fun reset() {
         maneuverKey = null
-        segmentMeters = 0.0
         buzzed = false
         lastDistance = 0.0
+        anchorDistance = 0.0
+        anchorTimeMs = 0L
+        derivedSpeedKmh = -1.0
     }
 
     /**
      * Feed one navigation update; returns true when the watch should buzz NOW.
      *
      * @param directionId the maneuver id (Direction.id) of this update.
-     * @param instructionText the composed display text ("300 m — Rua X"); the live
-     *   distance prefix is ignored for identity — only the instruction part is stable.
+     * @param instructionText the composed display text ("300 m — Rua X"); distances are
+     *   stripped for identity so the live countdown doesn't look like a new maneuver.
      * @param distanceMeters parsed numeric distance to the maneuver, or null.
      * @param speedKmh current GPS speed, or -1 when unknown/stale.
      */
     @Synchronized
-    fun onUpdate(directionId: Int, instructionText: String, distanceMeters: Double?, speedKmh: Int): Boolean {
-        val key = "$directionId|${instructionText.substringAfter(" — ", instructionText)}"
+    fun onUpdate(
+        directionId: Int,
+        instructionText: String,
+        distanceMeters: Double?,
+        speedKmh: Int,
+        now: Long = System.currentTimeMillis(),
+    ): Boolean {
+        val key = "$directionId|${NaviParser.instructionKey(instructionText)}"
 
         if (distanceMeters == null) {
-            // Fallback 3 (legacy): nothing to reason about -> one buzz per new instruction.
+            // Legacy fallback: no distance to reason about -> one buzz per new instruction.
             val isNew = key != maneuverKey
             maneuverKey = key
-            segmentMeters = 0.0
-            buzzed = true // this maneuver has had its buzz
-            lastDistance = Double.MAX_VALUE // block a spurious rearm if distance appears later
+            buzzed = true
+            lastDistance = Double.MAX_VALUE
+            anchorDistance = 0.0
+            anchorTimeMs = now
+            derivedSpeedKmh = -1.0
             return isNew
         }
 
-        if (key != maneuverKey) {
+        val newManeuver = key != maneuverKey
+        val reroute = !newManeuver && distanceMeters > lastDistance + REARM_JUMP_M
+        if (newManeuver || reroute) {
+            // A genuinely new approach: re-arm the buzz and restart the speed estimate.
             maneuverKey = key
-            segmentMeters = distanceMeters
             buzzed = false
+            anchorDistance = distanceMeters
+            anchorTimeMs = now
+            derivedSpeedKmh = -1.0
         } else {
-            if (distanceMeters > lastDistance + REARM_JUMP_M) {
-                segmentMeters = distanceMeters
-                buzzed = false
+            // Same maneuver getting closer: refine the derived approach speed.
+            val dtS = (now - anchorTimeMs) / 1000.0
+            val drop = anchorDistance - distanceMeters
+            if (drop > 0 && dtS in MIN_DT_S..MAX_DT_S) {
+                derivedSpeedKmh = drop / dtS * 3.6
+            } else if (dtS > MAX_DT_S) {
+                // Slow crawl: slide the window so the estimate stays recent.
+                anchorDistance = distanceMeters
+                anchorTimeMs = now
             }
-            if (distanceMeters > segmentMeters) segmentMeters = distanceMeters
         }
         lastDistance = distanceMeters
 
@@ -101,14 +128,16 @@ object VibePlanner {
         return false
     }
 
-    /** The lead distance (m) at which the buzz should fire, given the current speed. */
-    private fun leadMeters(speedKmh: Int): Double {
-        if (speedKmh >= MIN_SPEED_KMH) {
-            return (speedKmh / 3.6 * PREPARE_SECONDS).coerceIn(MIN_LEAD_M, MAX_LEAD_M)
+    /** The lead distance (m) at which the buzz should fire, given the best speed we have. */
+    private fun leadMeters(gpsSpeedKmh: Int): Double {
+        val speed = if (gpsSpeedKmh >= MIN_SPEED_KMH) gpsSpeedKmh.toDouble() else derivedSpeedKmh
+        if (speed >= MIN_SPEED_KMH) {
+            return (speed / 3.6 * PREPARE_SECONDS).coerceIn(MIN_LEAD_M, MAX_LEAD_M)
         }
+        // No usable speed yet: coarse bucket by how far out the maneuver was announced.
         return when {
-            segmentMeters >= SEG_MOTORWAY_M -> LEAD_MOTORWAY_M
-            segmentMeters >= SEG_ROAD_M -> LEAD_ROAD_M
+            anchorDistance >= SEG_MOTORWAY_M -> LEAD_MOTORWAY_M
+            anchorDistance >= SEG_ROAD_M -> LEAD_ROAD_M
             else -> LEAD_STREET_M
         }
     }

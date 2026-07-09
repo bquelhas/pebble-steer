@@ -85,6 +85,10 @@
     <string name="mock_nav_caption">Shows the real Google Maps icon in a notification and runs it through the classifier (as with real notifications). Sends the watch the maneuver we READ — to audit how each icon is read, one by one.</string>
     <string name="open_mock_nav">Mock navigation (debug)</string>
     <string name="test_speed_sign">Test speed sign on watch</string>
+    <string name="share_log">Share navigation log</string>
+    <string name="share_log_caption">Captures what Steer read from your map notifications this session. Share it after a turn went wrong so it can be diagnosed.</string>
+    <string name="share_log_subject">Steer navigation log</string>
+    <string name="share_log_empty">No navigation captured yet — start a route first.</string>
     <string name="clear_speed_sign">Clear speed sign</string>
     <string name="mock_dist_hint">Distance (e.g. 300 m)</string>
     <string name="mock_dist_default">300 m</string>
