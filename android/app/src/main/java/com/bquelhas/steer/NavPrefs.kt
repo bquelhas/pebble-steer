@@ -12,6 +12,13 @@ enum class SpeedometerMode { OFF, ALWAYS, BICYCLE }
 
 /** Small persisted settings store shared by the UI and the listener service. */
 object NavPrefs {
+    // Master gate for the speed features (on-watch speedometer + speed-limit alert). Turned
+    // OFF for now: the speed-limit alert isn't ready to ship. The implementation is kept in
+    // place (SpeedProvider, PebbleEmitter.sendSpeedAlert/sendSpeed, the hidden settings, the
+    // watch-side sign) — flip this to true to bring the feature back. GPS speed still feeds
+    // the smart-vibration timing regardless of this flag.
+    const val SPEED_FEATURES_ENABLED = false
+
     private const val FILE = "navme_prefs"
     private const val KEY_AUTOLAUNCH = "autolaunch"
     private const val KEY_BG_COLOR = "bg_color"
@@ -99,14 +106,14 @@ object NavPrefs {
 
     /** True when the speedometer is on in any form (gates GPS streaming). */
     fun isSpeedometerEnabled(context: Context): Boolean =
-        getSpeedometerMode(context) != SpeedometerMode.OFF
+        SPEED_FEATURES_ENABLED && getSpeedometerMode(context) != SpeedometerMode.OFF
 
     /**
      * Whether the current speed should be streamed for a route in [activeMode]: always in
      * [SpeedometerMode.ALWAYS]; only for bicycle routes in [SpeedometerMode.BICYCLE]; never when Off.
      */
     fun shouldShowSpeed(context: Context, activeMode: TravelMode): Boolean =
-        when (getSpeedometerMode(context)) {
+        SPEED_FEATURES_ENABLED && when (getSpeedometerMode(context)) {
             SpeedometerMode.OFF -> false
             SpeedometerMode.ALWAYS -> true
             SpeedometerMode.BICYCLE -> activeMode == TravelMode.BICYCLE
@@ -130,7 +137,7 @@ object NavPrefs {
      * sign (NAV_SPEED_ALERT + NAV_SPEED_LIMIT) when over. Default OFF (opt-in, needs location).
      */
     fun isSpeedAlert(context: Context): Boolean =
-        prefs(context).getBoolean(KEY_SPEED_ALERT, false)
+        SPEED_FEATURES_ENABLED && prefs(context).getBoolean(KEY_SPEED_ALERT, false)
 
     fun setSpeedAlert(context: Context, enabled: Boolean) {
         prefs(context).edit().putBoolean(KEY_SPEED_ALERT, enabled).apply()
