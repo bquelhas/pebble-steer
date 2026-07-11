@@ -43,6 +43,12 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="cm" />
         </intent>
+        <!-- Same idea for OsmAnd: every flavour (free / plus / nightly / store builds)
+             registers the osmand.api: scheme. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="osmand.api" />
+        </intent>
         <!-- Resolve apps that can open a .pbw (the Pebble / Core Devices app) so the
              Developer screen can offer to install the bundled watchapp. -->
         <intent>

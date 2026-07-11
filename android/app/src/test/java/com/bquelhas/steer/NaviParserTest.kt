@@ -44,6 +44,29 @@ class NaviParserTest {
         assertFalse(NaviParser.isDetected("app.comaps.fdroid", setOf(NaviParser.PKG_GOOGLE_MAPS)))
     }
 
+    // --- OsmAnd flavours (free / plus / F-Droid / nightly / store builds) ---
+
+    @Test fun everyOsmandFlavourIsSupported() {
+        assertTrue(NaviParser.isSupported("net.osmand"))          // free
+        assertTrue(NaviParser.isSupported("net.osmand.plus"))     // OsmAnd+ / F-Droid
+        assertTrue(NaviParser.isSupported("net.osmand.dev"))      // nightly
+        assertTrue(NaviParser.isSupported("net.osmand.huawei"))   // store build
+        assertFalse(NaviParser.isSupported("net.osmandx.other"))
+    }
+
+    @Test fun osmandNightlyReadsWithKeywordParser() {
+        // OsmAnd path (keyword-based): a nightly build must parse like the others.
+        val d = NaviParser.parse("net.osmand.dev", "60 m • Turn left", "Turn left onto Rua X 150 m")
+        assertEquals(Direction.LEFT, d!!.direction)
+        assertTrue(d.maneuverFromText)
+    }
+
+    @Test fun detectMatchesOsmandFlavourByPrefix() {
+        val detect = setOf(NaviParser.PKG_OSMAND, NaviParser.PKG_OSMAND_FREE)
+        assertTrue(NaviParser.isDetected("net.osmand.dev", detect))
+        assertFalse(NaviParser.isDetected("net.osmand.dev", setOf(NaviParser.PKG_GOOGLE_MAPS)))
+    }
+
     @Test fun turnLeftEn() {
         assertEquals(Direction.LEFT, gmaps("Turn left onto Main St", "300 m")!!.direction)
     }

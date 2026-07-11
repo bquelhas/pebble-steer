@@ -55,6 +55,21 @@ object NavLauncher {
         return COMAPS_PACKAGES.firstOrNull { isInstalled(context, it) }
     }
 
+    // Known OsmAnd launch targets (fallback if the scheme query misses): OsmAnd+ / F-Droid
+    // first, then the free build.
+    private val OSMAND_PACKAGES = listOf(PKG_OSMAND, PKG_OSMAND_FREE)
+
+    /** The installed OsmAnd flavour to launch (free / plus / nightly / store builds), or null.
+     *  Resolved via the osmand.api: scheme so every flavour is found without hardcoding it. */
+    private fun osmandPackage(context: Context): String? {
+        val probe = Intent(Intent.ACTION_VIEW, Uri.parse("osmand.api://navigate"))
+        context.packageManager.queryIntentActivities(probe, 0)
+            .map { it.activityInfo.packageName }
+            .firstOrNull { NaviParser.isOsmand(it) }
+            ?.let { return it }
+        return OSMAND_PACKAGES.firstOrNull { isInstalled(context, it) }
+    }
+
     private fun isInstalled(context: Context, pkg: String): Boolean = try {
         context.packageManager.getPackageInfo(pkg, 0)
         true
@@ -128,11 +143,7 @@ object NavLauncher {
     }
 
     private fun osmandIntent(context: Context, query: String, mode: TravelMode): Intent? {
-        val pkg = when {
-            isInstalled(context, PKG_OSMAND) -> PKG_OSMAND
-            isInstalled(context, PKG_OSMAND_FREE) -> PKG_OSMAND_FREE
-            else -> return null
-        }
+        val pkg = osmandPackage(context) ?: return null
         val dest = parseLatLon(query)
         if (dest != null) {
             val (lat, lon) = dest

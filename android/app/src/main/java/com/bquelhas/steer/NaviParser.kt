@@ -34,6 +34,12 @@ object NaviParser {
     const val PKG_OSMAND = "net.osmand.plus"
     const val PKG_OSMAND_FREE = "net.osmand"
     const val PKG_ORGANIC = "app.organicmaps"
+
+    // OsmAnd also ships several packages: net.osmand (free), net.osmand.plus (OsmAnd+ / the
+    // F-Droid "OsmAnd~"), net.osmand.dev (nightly), plus store builds (net.osmand.huawei …).
+    // Match the free one exactly and everything else by the "net.osmand." prefix.
+    private const val PKG_OSMAND_PREFIX = "net.osmand."
+    fun isOsmand(pkg: String): Boolean = pkg == PKG_OSMAND_FREE || pkg.startsWith(PKG_OSMAND_PREFIX)
     const val PKG_HERE = "com.here.app.maps"
     const val PKG_SYGIC = "com.sygic.aura"
 
@@ -58,15 +64,20 @@ object NaviParser {
 
     val SUPPORTED = setOf(PKG_GOOGLE_MAPS, PKG_OSMAND, PKG_OSMAND_FREE, PKG_COMAPS, PKG_ORGANIC)
 
-    /** Whether Steer reads this navigator at all (any CoMaps flavour included). */
-    fun isSupported(pkg: String): Boolean = pkg in SUPPORTED || isComaps(pkg)
+    /** Whether Steer reads this navigator at all (any CoMaps/OsmAnd flavour included). */
+    fun isSupported(pkg: String): Boolean = pkg in SUPPORTED || isComaps(pkg) || isOsmand(pkg)
 
     /**
-     * Whether [pkg] should be read given the user's detect-apps selection. CoMaps is matched
-     * by flavour: enabling CoMaps (any app.comaps.* in [detect]) reads every CoMaps flavour.
+     * Whether [pkg] should be read given the user's detect-apps selection. CoMaps and OsmAnd
+     * are matched by flavour: enabling one (any of its packages in [detect]) reads every
+     * flavour of it (F-Droid, nightly, store builds).
      */
-    fun isDetected(pkg: String, detect: Set<String>): Boolean =
-        pkg in detect || (isComaps(pkg) && detect.any { isComaps(it) })
+    fun isDetected(pkg: String, detect: Set<String>): Boolean = when {
+        pkg in detect -> true
+        isComaps(pkg) -> detect.any { isComaps(it) }
+        isOsmand(pkg) -> detect.any { isOsmand(it) }
+        else -> false
+    }
 
     fun parse(
         pkg: String,
@@ -78,7 +89,7 @@ object NaviParser {
     ): NaviData? {
         if (!isSupported(pkg)) return null
         val eta = extractEtaField(subText, etaMode)
-        if (pkg == PKG_OSMAND || pkg == PKG_OSMAND_FREE) return parseOsmand(title, text, eta, units)
+        if (isOsmand(pkg)) return parseOsmand(title, text, eta, units)
         if (isIconOnly(pkg)) return parseIconOnly(title, text, eta, units)
 
         val t = listOfNotNull(title, text).joinToString(" ").trim()
