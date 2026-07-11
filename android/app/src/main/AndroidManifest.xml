@@ -30,10 +30,18 @@
         <package android:name="net.osmand.plus" />
         <package android:name="net.osmand" />
         <package android:name="app.comaps.google" />
+        <package android:name="app.comaps.fdroid" />
         <package android:name="app.organicmaps" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="geo" />
+        </intent>
+        <!-- Any CoMaps flavour (google / fdroid / IzzyOnDroid) registers the cm: scheme.
+             Querying by scheme makes every flavour visible + launchable without hardcoding
+             its package name (Android 11+ package visibility). -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="cm" />
         </intent>
         <!-- Resolve apps that can open a .pbw (the Pebble / Core Devices app) so the
              Developer screen can offer to install the bundled watchapp. -->

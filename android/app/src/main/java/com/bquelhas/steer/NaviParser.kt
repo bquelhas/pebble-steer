@@ -33,20 +33,40 @@ object NaviParser {
     const val PKG_GOOGLE_MAPS = "com.google.android.apps.maps"
     const val PKG_OSMAND = "net.osmand.plus"
     const val PKG_OSMAND_FREE = "net.osmand"
-    const val PKG_COMAPS = "app.comaps.google"
     const val PKG_ORGANIC = "app.organicmaps"
     const val PKG_HERE = "com.here.app.maps"
     const val PKG_SYGIC = "com.sygic.aura"
+
+    // CoMaps ships under several flavour packages: app.comaps.google (Play/GitHub),
+    // app.comaps.fdroid (F-Droid), plus the IzzyOnDroid build. Match them all by this prefix
+    // so every flavour is read/launched, not just the Play one. PKG_COMAPS stays the canonical
+    // launch default (see NavLauncher).
+    const val PKG_COMAPS_PREFIX = "app.comaps."
+    const val PKG_COMAPS = "app.comaps.google"
+
+    /** Any CoMaps flavour (google / fdroid / IzzyOnDroid …). */
+    fun isComaps(pkg: String): Boolean = pkg.startsWith(PKG_COMAPS_PREFIX)
 
     // CoMaps / Organic Maps share one notification format: title = distance, text =
     // street name, and the maneuver lives ONLY as the engine-rendered largeIcon bitmap
     // (no maneuver text anywhere). They are handled like Google Maps — the glyph is
     // classified into NAV_TURN. Critically we must NOT keyword-match their text: the
     // "text" is a street name and PT streets like "Rua Direita"/"Rua da Esquerda" would
-    // be misread as a turn. [ICON_ONLY] forces the glyph path (maneuverFromText=false).
-    private val ICON_ONLY = setOf(PKG_COMAPS, PKG_ORGANIC)
+    // be misread as a turn. The icon-only path forces the glyph (maneuverFromText=false).
+    private val ICON_ONLY = setOf(PKG_ORGANIC)
+    private fun isIconOnly(pkg: String): Boolean = pkg in ICON_ONLY || isComaps(pkg)
 
     val SUPPORTED = setOf(PKG_GOOGLE_MAPS, PKG_OSMAND, PKG_OSMAND_FREE, PKG_COMAPS, PKG_ORGANIC)
+
+    /** Whether Steer reads this navigator at all (any CoMaps flavour included). */
+    fun isSupported(pkg: String): Boolean = pkg in SUPPORTED || isComaps(pkg)
+
+    /**
+     * Whether [pkg] should be read given the user's detect-apps selection. CoMaps is matched
+     * by flavour: enabling CoMaps (any app.comaps.* in [detect]) reads every CoMaps flavour.
+     */
+    fun isDetected(pkg: String, detect: Set<String>): Boolean =
+        pkg in detect || (isComaps(pkg) && detect.any { isComaps(it) })
 
     fun parse(
         pkg: String,
@@ -56,10 +76,10 @@ object NaviParser {
         units: UnitSystem = UnitSystem.AUTO,
         etaMode: EtaMode = EtaMode.ARRIVAL,
     ): NaviData? {
-        if (pkg !in SUPPORTED) return null
+        if (!isSupported(pkg)) return null
         val eta = extractEtaField(subText, etaMode)
         if (pkg == PKG_OSMAND || pkg == PKG_OSMAND_FREE) return parseOsmand(title, text, eta, units)
-        if (pkg in ICON_ONLY) return parseIconOnly(title, text, eta, units)
+        if (isIconOnly(pkg)) return parseIconOnly(title, text, eta, units)
 
         val t = listOfNotNull(title, text).joinToString(" ").trim()
         if (t.isEmpty()) return null

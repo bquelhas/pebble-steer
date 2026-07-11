@@ -65,9 +65,9 @@ class NavNotificationListenerService : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val pkg = sbn.packageName
-        if (pkg !in NaviParser.SUPPORTED) return
+        if (!NaviParser.isSupported(pkg)) return
         // User can narrow which navigators Steer reads (Customization tab). Default = all supported.
-        if (pkg !in NavPrefs.getDetectApps(applicationContext)) return
+        if (!NaviParser.isDetected(pkg, NavPrefs.getDetectApps(applicationContext))) return
         // Only forward real turn-by-turn. A navigation notification is ongoing (foreground
         // service) and/or category "navigation"; the map app's other notifications — e.g.
         // Google Maps' "Your June Timeline" recap or commute tips — are neither, and would
@@ -157,7 +157,7 @@ class NavNotificationListenerService : NotificationListenerService() {
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
-        if (sbn.packageName !in NaviParser.SUPPORTED) return
+        if (!NaviParser.isSupported(sbn.packageName)) return
         // Only the nav notification's removal ends a session; ignore dismissals of the map
         // app's other notifications (e.g. a Timeline recap) so they can't tear down a route.
         if (!isNavNotification(sbn)) return

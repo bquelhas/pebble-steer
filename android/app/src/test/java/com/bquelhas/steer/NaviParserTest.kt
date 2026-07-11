@@ -1,7 +1,9 @@
 package com.bquelhas.steer
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class NaviParserTest {
@@ -14,6 +16,32 @@ class NaviParserTest {
 
     @Test fun unsupportedPackageIgnored() {
         assertNull(NaviParser.parse("com.unknown.app", "Turn left", "300 m"))
+    }
+
+    // --- CoMaps flavours (Play / F-Droid / IzzyOnDroid) are all supported ---
+
+    @Test fun everyComapsFlavourIsSupported() {
+        assertTrue(NaviParser.isSupported("app.comaps.google"))
+        assertTrue(NaviParser.isSupported("app.comaps.fdroid"))
+        assertTrue(NaviParser.isSupported("app.comaps.izzyondroid"))
+        assertFalse(NaviParser.isSupported("app.comapsx.other"))
+        assertFalse(NaviParser.isSupported("com.example.comaps"))
+    }
+
+    @Test fun comapsFdroidReadsAsIconOnly() {
+        // Icon-only: distance from title, street from text, direction left to the classifier.
+        val d = NaviParser.parse("app.comaps.fdroid", "300 m", "Rua de São Dinis")
+        assertEquals("300 m — Rua de São Dinis", d!!.instructionText)
+        assertFalse(d.maneuverFromText)   // must NOT keyword-match the street
+    }
+
+    @Test fun detectMatchesComapsFlavourByPrefix() {
+        // Enabling CoMaps stores the canonical package; any flavour must still be detected.
+        val detect = setOf(NaviParser.PKG_COMAPS, NaviParser.PKG_GOOGLE_MAPS)
+        assertTrue(NaviParser.isDetected("app.comaps.fdroid", detect))
+        assertTrue(NaviParser.isDetected(NaviParser.PKG_GOOGLE_MAPS, detect))
+        // CoMaps unchecked -> no comaps package in the set -> not detected.
+        assertFalse(NaviParser.isDetected("app.comaps.fdroid", setOf(NaviParser.PKG_GOOGLE_MAPS)))
     }
 
     @Test fun turnLeftEn() {
