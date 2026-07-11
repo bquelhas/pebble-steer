@@ -67,6 +67,25 @@ class NaviParserTest {
         assertFalse(NaviParser.isDetected("net.osmand.dev", setOf(NaviParser.PKG_GOOGLE_MAPS)))
     }
 
+    // --- non-nav notifications carry neither a distance nor a maneuver (listener drops them) ---
+
+    @Test fun osmandMapDownloadIsNotNavContent() {
+        // OsmAnd's map-download progress notification: no distance-to-maneuver, no turn keyword.
+        val d = NaviParser.parse(NaviParser.PKG_OSMAND, "Downloading Portugal_Europe", "45% • 150 MB / 350 MB")!!
+        assertNull(d.distanceMeters)
+        assertFalse(d.maneuverFromText)     // -> listener discards (no stray arrow on the watch)
+    }
+
+    @Test fun realOsmandTurnIsNavContent() {
+        val d = NaviParser.parse(NaviParser.PKG_OSMAND, "60 m • Turn left", "Turn left onto Rua X 150 m")!!
+        assertTrue(d.distanceMeters != null || d.maneuverFromText)
+    }
+
+    @Test fun downloadWithMegabytesIsNotReadAsDistance() {
+        // "150 MB" must NOT be parsed as "150 m".
+        assertNull(NaviParser.distanceMetersOf("45% • 150 MB / 350 MB"))
+    }
+
     @Test fun turnLeftEn() {
         assertEquals(Direction.LEFT, gmaps("Turn left onto Main St", "300 m")!!.direction)
     }

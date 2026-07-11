@@ -89,6 +89,12 @@ class NavNotificationListenerService : NotificationListenerService() {
             etaMode,
         ) ?: return
 
+        // Content guard: a real turn-by-turn update carries a distance-to-the-maneuver and/or a
+        // maneuver keyword. This drops the map app's OTHER ongoing notifications that slip past
+        // the ongoing/category check — e.g. OsmAnd's (or CoMaps'/Organic's) map-download progress
+        // — which would otherwise show as a stray "straight ahead" on the watch.
+        if (data.distanceMeters == null && !data.maneuverFromText) return
+
         // A live nav update arrived: cancel any pending session-end so a Maps notification
         // cancel+repost doesn't tear down the session (and its travel mode) between frames.
         endHandler.removeCallbacks(endSessionRunnable)
