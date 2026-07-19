@@ -57,27 +57,21 @@ class NavNotificationListenerService : NotificationListenerService() {
 
     /**
      * A turn-by-turn navigation notification, as opposed to the map app's other notifications.
-     * Tests are STRUCTURAL (not text), so they work in every language. Based on reading each
-     * app's source, the notification types are:
-     *   OsmAnd: Navigation (category NAVIGATION), Download (progress bar), GPX/trip recording
-     *           (ongoing, NO category), Fallback "app running" (not ongoing), Android Auto.
-     *   Organic Maps / CoMaps: Navigation (category NAVIGATION), Downloader (progress bar),
-     *           TrackRecording (ongoing, category SERVICE).
-     *   Google Maps: Navigation (ongoing), Timeline recap / tips (not ongoing).
-     * Only the navigation notification carries category NAVIGATION in the OSM-family apps, so:
-     *  - a progress bar => download / long task, never nav;
-     *  - category NAVIGATION => nav (drops OsmAnd GPX + OM/CoMaps track recording, which lack it);
-     *  - Google Maps doesn't reliably set the category, so fall back to its ongoing flag (its
-     *    non-nav notifications, e.g. Timeline, are not ongoing).
+     * The test is STRUCTURAL (not text), so it works in every language:
+     *   - OSM-family (OsmAnd / Organic Maps / CoMaps) tag their nav notification with category
+     *     NAVIGATION; their downloads and track-recording notifications don't — so the category
+     *     alone separates navigation from the rest (no need to inspect a progress bar).
+     *   - Google Maps doesn't set the category; its live nav notification is ongoing (Timeline
+     *     recaps and tips are not). Since Android 16 "Live Updates", the Maps nav notification
+     *     ALSO carries a trip-progress bar, so we must NOT disqualify on a progress bar — doing
+     *     that (v1.5.8) froze the watch on "Starting navigation..." for users on newer Maps /
+     *     Android. Ongoing is enough.
      */
     private fun isNavNotification(sbn: StatusBarNotification): Boolean {
         val n = sbn.notification
-        val extras = n.extras
-        val hasProgress = extras.getInt(Notification.EXTRA_PROGRESS_MAX, 0) > 0 ||
-            extras.getBoolean(Notification.EXTRA_PROGRESS_INDETERMINATE, false)
-        if (hasProgress) return false
         if (n.category == Notification.CATEGORY_NAVIGATION) return true
-        return sbn.packageName == NaviParser.PKG_GOOGLE_MAPS && sbn.isOngoing
+        if (sbn.packageName == NaviParser.PKG_GOOGLE_MAPS) return sbn.isOngoing
+        return false
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
