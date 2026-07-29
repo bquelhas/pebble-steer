@@ -100,6 +100,11 @@ class NavNotificationListenerService : NotificationListenerService() {
             etaMode,
         ) ?: return
 
+        // Content guard: drop notifications with no ETA, no distance, and no maneuver keyword.
+        // Android Auto often posts an ongoing Google Maps notification with just the current street
+        // name ("where you are") without any of these fields. Real navigation always has them.
+        if (data.eta == null && data.distanceMeters == null && !data.maneuverFromText) return
+
         // A live nav update arrived: cancel any pending session-end so a Maps notification
         // cancel+repost doesn't tear down the session (and its travel mode) between frames.
         endHandler.removeCallbacks(endSessionRunnable)
@@ -113,10 +118,10 @@ class NavNotificationListenerService : NotificationListenerService() {
         if (!data.maneuverFromText) {
             val packed = IconConverter.extractManeuverBitmap(applicationContext, extras)
             if (packed != null) {
-                // The baked fingerprint table is Google-Maps artwork only. CoMaps / Organic
-                // Maps draw their own glyphs, so for them we classify by geometry alone and
-                // log the signature so a CoMaps-specific table can be built from a real drive.
-                val useTable = pkg == NaviParser.PKG_GOOGLE_MAPS
+                // The baked fingerprint table is Google-Maps artwork. CoMaps uses the same 
+                // glyphs so we can use the table for them too. Organic Maps draws their own 
+                // glyphs, so for them we classify by geometry alone.
+                val useTable = pkg == NaviParser.PKG_GOOGLE_MAPS || NaviParser.isComaps(pkg)
                 val r = ManeuverClassifier.classify(packed, useTable)
                 Log.i(TAG, "glyph[$pkg] -> ${r.direction} (${r.confidence} angle=${r.angle}" +
                     " cov=${"%.3f".format(r.coverage)}) fp=${r.fpHex} sig=${r.sigHex}")
