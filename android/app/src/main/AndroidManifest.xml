@@ -31,7 +31,9 @@
         <package android:name="net.osmand" />
         <package android:name="app.comaps.google" />
         <package android:name="app.comaps.fdroid" />
+        <package android:name="app.comaps" />
         <package android:name="app.organicmaps" />
+        <package android:name="app.organicmaps.web" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="geo" />
@@ -48,6 +50,11 @@
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="osmand.api" />
+        </intent>
+        <!-- Same idea for Organic Maps: every flavour registers the om: scheme. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="om" />
         </intent>
         <!-- Resolve apps that can open a .pbw (the Pebble / Core Devices app) so the
              Developer screen can offer to install the bundled watchapp. -->

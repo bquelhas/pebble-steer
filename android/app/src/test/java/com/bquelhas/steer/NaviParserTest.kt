@@ -24,6 +24,7 @@ class NaviParserTest {
         assertTrue(NaviParser.isSupported("app.comaps.google"))
         assertTrue(NaviParser.isSupported("app.comaps.fdroid"))
         assertTrue(NaviParser.isSupported("app.comaps.izzyondroid"))
+        assertTrue(NaviParser.isSupported("app.comaps"))
         assertFalse(NaviParser.isSupported("app.comapsx.other"))
         assertFalse(NaviParser.isSupported("com.example.comaps"))
     }
@@ -42,6 +43,14 @@ class NaviParserTest {
         assertTrue(NaviParser.isDetected(NaviParser.PKG_GOOGLE_MAPS, detect))
         // CoMaps unchecked -> no comaps package in the set -> not detected.
         assertFalse(NaviParser.isDetected("app.comaps.fdroid", setOf(NaviParser.PKG_GOOGLE_MAPS)))
+    }
+
+    // --- Organic Maps flavours (Play / F-Droid / GitHub) ---
+
+    @Test fun everyOrganicFlavourIsSupported() {
+        assertTrue(NaviParser.isSupported("app.organicmaps"))
+        assertTrue(NaviParser.isSupported("app.organicmaps.web"))
+        assertFalse(NaviParser.isSupported("app.organicmapsx.other"))
     }
 
     // --- OsmAnd flavours (free / plus / F-Droid / nightly / store builds) ---

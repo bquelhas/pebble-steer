@@ -36,7 +36,7 @@ object NavLauncher {
     private const val PKG_ORGANIC = NaviParser.PKG_ORGANIC
 
     // Known CoMaps launch targets, used as a fallback if the scheme query below misses.
-    private val COMAPS_PACKAGES = listOf("app.comaps.google", "app.comaps.fdroid")
+    private val COMAPS_PACKAGES = listOf(NaviParser.PKG_COMAPS, "app.comaps.fdroid", NaviParser.PKG_COMAPS_BASE)
 
     private val LATLNG = Regex("""^\s*-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*$""")
 
@@ -68,6 +68,18 @@ object NavLauncher {
             .firstOrNull { NaviParser.isOsmand(it) }
             ?.let { return it }
         return OSMAND_PACKAGES.firstOrNull { isInstalled(context, it) }
+    }
+
+    private val ORGANIC_PACKAGES = listOf(PKG_ORGANIC, NaviParser.PKG_ORGANIC_WEB)
+
+    /** The installed Organic Maps flavour to launch, resolved via the om: scheme. */
+    private fun organicPackage(context: Context): String? {
+        val probe = Intent(Intent.ACTION_VIEW, Uri.parse("om://route"))
+        context.packageManager.queryIntentActivities(probe, 0)
+            .map { it.activityInfo.packageName }
+            .firstOrNull { NaviParser.isOrganic(it) }
+            ?.let { return it }
+        return ORGANIC_PACKAGES.firstOrNull { isInstalled(context, it) }
     }
 
     private fun isInstalled(context: Context, pkg: String): Boolean = try {
@@ -182,7 +194,8 @@ object NavLauncher {
         val out = mutableListOf<Pair<String, Intent>>()
         mapsIntent(context, query, mode)?.let { out += "Google Maps" to it }
         osmandIntent(context, query, mode)?.let { out += "OsmAnd" to it }
-        omRouteIntent(context, query, mode, PKG_ORGANIC, "om")?.let { out += "Organic Maps" to it }
+        organicPackage(context)?.let { pkg -> omRouteIntent(context, query, mode, pkg, "om") }
+            ?.let { out += "Organic Maps" to it }
         comapsPackage(context)?.let { pkg -> omRouteIntent(context, query, mode, pkg, "cm") }
             ?.let { out += "CoMaps" to it }
         return out
@@ -193,7 +206,7 @@ object NavLauncher {
         when (app) {
             NavApp.GOOGLE_MAPS -> mapsIntent(context, query, mode)
             NavApp.OSMAND -> osmandIntent(context, query, mode)
-            NavApp.ORGANIC -> omRouteIntent(context, query, mode, PKG_ORGANIC, "om")
+            NavApp.ORGANIC -> organicPackage(context)?.let { omRouteIntent(context, query, mode, it, "om") }
             NavApp.COMAPS -> comapsPackage(context)?.let { omRouteIntent(context, query, mode, it, "cm") }
             NavApp.AUTO -> null
         }

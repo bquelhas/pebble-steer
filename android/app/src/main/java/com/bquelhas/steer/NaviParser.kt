@@ -34,6 +34,8 @@ object NaviParser {
     const val PKG_OSMAND = "net.osmand.plus"
     const val PKG_OSMAND_FREE = "net.osmand"
     const val PKG_ORGANIC = "app.organicmaps"
+    const val PKG_ORGANIC_WEB = "app.organicmaps.web"
+    fun isOrganic(pkg: String): Boolean = pkg == PKG_ORGANIC || pkg == PKG_ORGANIC_WEB
 
     // OsmAnd also ships several packages: net.osmand (free), net.osmand.plus (OsmAnd+ / the
     // F-Droid "OsmAnd~"), net.osmand.dev (nightly), plus store builds (net.osmand.huawei …).
@@ -49,9 +51,10 @@ object NaviParser {
     // launch default (see NavLauncher).
     const val PKG_COMAPS_PREFIX = "app.comaps."
     const val PKG_COMAPS = "app.comaps.google"
+    const val PKG_COMAPS_BASE = "app.comaps"
 
-    /** Any CoMaps flavour (google / fdroid / IzzyOnDroid …). */
-    fun isComaps(pkg: String): Boolean = pkg.startsWith(PKG_COMAPS_PREFIX)
+    /** Any CoMaps flavour (google / fdroid / IzzyOnDroid / Codeberg …). */
+    fun isComaps(pkg: String): Boolean = pkg == PKG_COMAPS_BASE || pkg.startsWith(PKG_COMAPS_PREFIX)
 
     // CoMaps / Organic Maps share one notification format: title = distance, text =
     // street name, and the maneuver lives ONLY as the engine-rendered largeIcon bitmap
@@ -60,12 +63,12 @@ object NaviParser {
     // "text" is a street name and PT streets like "Rua Direita"/"Rua da Esquerda" would
     // be misread as a turn. The icon-only path forces the glyph (maneuverFromText=false).
     private val ICON_ONLY = setOf(PKG_ORGANIC)
-    private fun isIconOnly(pkg: String): Boolean = pkg in ICON_ONLY || isComaps(pkg)
+    private fun isIconOnly(pkg: String): Boolean = isOrganic(pkg) || isComaps(pkg)
 
-    val SUPPORTED = setOf(PKG_GOOGLE_MAPS, PKG_OSMAND, PKG_OSMAND_FREE, PKG_COMAPS, PKG_ORGANIC)
+    val SUPPORTED = setOf(PKG_GOOGLE_MAPS, PKG_OSMAND, PKG_OSMAND_FREE, PKG_COMAPS, PKG_ORGANIC, PKG_ORGANIC_WEB)
 
-    /** Whether Steer reads this navigator at all (any CoMaps/OsmAnd flavour included). */
-    fun isSupported(pkg: String): Boolean = pkg in SUPPORTED || isComaps(pkg) || isOsmand(pkg)
+    /** Whether Steer reads this navigator at all (any CoMaps/OsmAnd/Organic flavour included). */
+    fun isSupported(pkg: String): Boolean = pkg in SUPPORTED || isComaps(pkg) || isOsmand(pkg) || isOrganic(pkg)
 
     /**
      * Whether [pkg] should be read given the user's detect-apps selection. CoMaps and OsmAnd
@@ -76,6 +79,7 @@ object NaviParser {
         pkg in detect -> true
         isComaps(pkg) -> detect.any { isComaps(it) }
         isOsmand(pkg) -> detect.any { isOsmand(it) }
+        isOrganic(pkg) -> detect.any { isOrganic(it) }
         else -> false
     }
 
