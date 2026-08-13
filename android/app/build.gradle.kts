@@ -11,8 +11,8 @@ android {
         applicationId = "com.bquelhas.steer"
         minSdk = 24
         targetSdk = 36
-        versionCode = 16
-        versionName = "1.5.10"
+        versionCode = 17
+        versionName = "1.5.11"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
