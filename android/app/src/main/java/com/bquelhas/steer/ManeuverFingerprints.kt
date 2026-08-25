@@ -94,6 +94,39 @@ object ManeuverFingerprints {
         e("000000008001c003e007f00fb00d800180018001800180018001800100000000", Direction.DEPART, "depart"),
     )
 
+    /**
+     * Baked table for ORGANIC MAPS (and CoMaps, a fork with the same engine + icons). GENERATED
+     * by /tmp/gen_om_table.py from the real Organic Maps maneuver drawables (CarDirection.getTurnRes),
+     * via the same signature as [ManeuverClassifier.signature] — do NOT hand-edit. Organic draws
+     * its own glyphs (nothing like Google Maps' artwork), so it needs its own table. Roundabouts
+     * carry only the EXIT NUMBER (a circle + digit), which we can't render on the watch yet, so
+     * every roundabout glyph maps to the generic roundabout for now (KNOWN LIMITATION: no exit
+     * number — see docs/organic_mapping).
+     */
+    val ORGANIC_TABLE: Array<Entry> = arrayOf(
+        e("80018001c003e007e007e007c003c003c003c003c003c003c003c003c003c003", Direction.STRAIGHT, "straight"),
+        e("40006000f801fc07fc0ff80f601e401e001e001e001e001e001e001e001e001e", Direction.LEFT, "left"),
+        e("00020006801fe03ff03ff01f7806780278007800780078007800780078007800", Direction.RIGHT, "right"),
+        e("1800f801f801f801f003f00390070007000f000f000f000f000f000f000f000f", Direction.SLIGHT_LEFT, "slight_left"),
+        e("0018801f801f801fc00fc00fe009e000f000f000f000f000f000f000f000f000", Direction.SLIGHT_RIGHT, "slight_right"),
+        e("0003c80ff81ff81ffc3cfc3cfc3c043c003c003c003c003c003c003c003c003c", Direction.SHARP_LEFT, "sharp_left"),
+        e("c000f013f81ff81f3c3f3c3f3c3f3c203c003c003c003c003c003c003c003c00", Direction.SHARP_RIGHT, "sharp_right"),
+        e("8003e00ff01ff01f701c701c701c701c701c701cfc1dfc1cf81c701c301c001c", Direction.UTURN_LEFT, "uturn_left"),
+        e("c001f007f80ff80f380e380e380e380e380e380eb83f383f381f380e380c3800", Direction.UTURN_RIGHT, "uturn_right"),
+        e("fb01bf23ff3bef3eef3f3b3ffb7fff7f07f706ff060006000600060006000600", Direction.ARRIVE, "arrive"),
+        e("000000007e003e007e00fc00fc01c8038007801f001f001f001f001e001e001e", Direction.RAMP_LEFT, "exit_left"),
+        e("00000000007e007c007e003f803fc013e001f801f800f800f800780078007800", Direction.RAMP_RIGHT, "exit_right"),
+        e("c003c003f00ff81ffc3f3c3c1ff81ff81ff81ff83c3cfc3ff81ff00fc003c003", Direction.GENERIC_ROUNDABOUT_RIGHT, "roundabout"),
+        e("c003c003f00ff81ffc3f3c3ddff99ff99ff99ff93c3dfc3ff81ff00fc003c003", Direction.GENERIC_ROUNDABOUT_RIGHT, "roundabout_exit_1"),
+        e("c003c003f00ff81ffc3fbc3ddffb1ffb9ff9dffbfc3ffc3ff81ff00fc003c003", Direction.GENERIC_ROUNDABOUT_RIGHT, "roundabout_exit_2"),
+        e("c003c003f00ff81ffc3fbc3ddffb9ffb9ffbdffbbc3dfc3ff81ff00fc003c003", Direction.GENERIC_ROUNDABOUT_RIGHT, "roundabout_exit_3"),
+        e("c003c003f00ff81ffc3f3c3d9ff9dff9dffbdff93c3dfc3ff81ff00fc003c003", Direction.GENERIC_ROUNDABOUT_RIGHT, "roundabout_exit_4"),
+        e("c003c003f00ff81ffc3fbc3ddff9dff91ffbdffbbc3dfc3ff81ff00fc003c003", Direction.GENERIC_ROUNDABOUT_RIGHT, "roundabout_exit_5"),
+        e("c003c003f00ff81ffc3fbc3ddff9dffbdffbdffbbc3dfc3ff81ff00fc003c003", Direction.GENERIC_ROUNDABOUT_RIGHT, "roundabout_exit_6"),
+        e("c003c003f00ff81ffc3ffc3fdffb1ffb9ff99ff9bc3cfc3ff81ff00fc003c003", Direction.GENERIC_ROUNDABOUT_RIGHT, "roundabout_exit_7"),
+        e("c003c003f00ff81ffc3fbc3ddffbdffbdffbdffbbc3dfc3ff81ff00fc003c003", Direction.GENERIC_ROUNDABOUT_RIGHT, "roundabout_exit_8"),
+    )
+
     private fun e(sigHex: String, direction: Direction, glyph: String) =
         Entry(hex(sigHex), direction, glyph)
 

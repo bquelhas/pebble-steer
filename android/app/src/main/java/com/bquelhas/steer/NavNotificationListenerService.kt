@@ -118,11 +118,15 @@ class NavNotificationListenerService : NotificationListenerService() {
         if (!data.maneuverFromText) {
             val packed = IconConverter.extractManeuverBitmap(applicationContext, extras)
             if (packed != null) {
-                // The baked fingerprint table is Google-Maps artwork. CoMaps uses the same 
-                // glyphs so we can use the table for them too. Organic Maps draws their own 
-                // glyphs, so for them we classify by geometry alone.
-                val useTable = pkg == NaviParser.PKG_GOOGLE_MAPS || NaviParser.isComaps(pkg)
-                val r = ManeuverClassifier.classify(packed, useTable)
+                // Each app draws its own glyphs, so match against the right baked table:
+                // Google Maps -> Maps table; Organic Maps AND CoMaps (a fork with the same
+                // engine + icons) -> Organic table. Anything else -> geometry only (null).
+                val table = when {
+                    pkg == NaviParser.PKG_GOOGLE_MAPS -> ManeuverFingerprints.TABLE
+                    NaviParser.isOrganic(pkg) || NaviParser.isComaps(pkg) -> ManeuverFingerprints.ORGANIC_TABLE
+                    else -> null
+                }
+                val r = ManeuverClassifier.classify(packed, table)
                 Log.i(TAG, "glyph[$pkg] -> ${r.direction} (${r.confidence} angle=${r.angle}" +
                     " cov=${"%.3f".format(r.coverage)}) fp=${r.fpHex} sig=${r.sigHex}")
                 data = data.copy(direction = r.direction)

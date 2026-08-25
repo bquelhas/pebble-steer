@@ -29,7 +29,7 @@ class ManeuverClassifierTest {
     @Test fun straightArrowIsStraightAndHigh() {
         val p = blank()
         vline(p, 23, 25, 8, 40)            // vertical stem, tip at top
-        val r = ManeuverClassifier.classify(p, useTable = false)
+        val r = ManeuverClassifier.classify(p, table = null)
         assertEquals(Direction.STRAIGHT, r.direction)
         assertEquals(ManeuverClassifier.Confidence.HIGH, r.confidence)
     }
@@ -38,7 +38,7 @@ class ManeuverClassifierTest {
         val p = blank()
         vline(p, 23, 25, 24, 40)           // stem rising from the bottom
         vline(p, 6, 24, 23, 25)            // elbow turning left, tip at the left
-        val r = ManeuverClassifier.classify(p, useTable = false)
+        val r = ManeuverClassifier.classify(p, table = null)
         assertTrue(
             "expected a left-side maneuver, got ${r.direction}",
             r.direction in setOf(Direction.LEFT, Direction.SLIGHT_LEFT, Direction.SHARP_LEFT),

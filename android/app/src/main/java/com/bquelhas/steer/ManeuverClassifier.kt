@@ -86,14 +86,13 @@ object ManeuverClassifier {
     // geometry-only; a finer, collision-free fingerprint table is the planned follow-up.
 
     /**
-     * @param useTable when false, the baked [ManeuverFingerprints] nearest-neighbour
-     *   lookup is skipped and classification is geometry-only. The table holds the
-     *   signatures of GOOGLE MAPS artwork; CoMaps / Organic Maps draw their own glyphs,
-     *   so matching them against the Maps table would mis-bin them. Geometry (arrow
-     *   shaft + head heading) is artwork-agnostic and safe for any arrow glyph. A
-     *   CoMaps-specific table can be added later from captured signatures.
+     * @param table the baked nearest-neighbour signature table to match against, or null for
+     *   geometry-only. Each app draws its own artwork, so pass the matching table:
+     *   [ManeuverFingerprints.TABLE] for Google Maps, [ManeuverFingerprints.ORGANIC_TABLE] for
+     *   Organic Maps / CoMaps (a fork with the same glyphs). Geometry (arrow shaft + head
+     *   heading) is the artwork-agnostic fallback when no table matches within [MATCH_MAX].
      */
-    fun classify(packed: ByteArray, useTable: Boolean = true): Result {
+    fun classify(packed: ByteArray, table: Array<ManeuverFingerprints.Entry>? = ManeuverFingerprints.TABLE): Result {
         val pts = ArrayList<IntArray>(512)
         var minX = N; var maxX = 0; var minY = N; var maxY = 0
         for (y in 0 until N) {
@@ -117,10 +116,10 @@ object ManeuverClassifier {
         //    256-bit signature of every real Maps glyph -> our Direction. Nearest-neighbour
         //    by Hamming distance recognises the non-arrow maneuvers geometry can't model
         //    (ramps, forks, keeps, merges, roundabouts, destinations) and pins exact turns.
-        if (useTable) {
+        if (table != null) {
             var best: Direction? = null
             var bestDist = Int.MAX_VALUE
-            for ((tsig, tdir) in ManeuverFingerprints.TABLE) {
+            for ((tsig, tdir) in table) {
                 val d = hamming(sig, tsig)
                 if (d < bestDist) { bestDist = d; best = tdir }
             }

@@ -23,3 +23,8 @@ app/src/main/assets/*.pbw
 # Google Maps maneuver reference artwork — Google's proprietary artwork, used
 # only by the debug-only MockNav auditing tool. Must NOT be redistributed.
 app/src/debug/assets/gmaps_maneuvers/
+
+# Organic Maps / CoMaps maneuver reference artwork (Apache-2.0) — kept local for
+# regenerating ManeuverFingerprints.ORGANIC_TABLE and its test; the baked signatures
+# are what ship, so the PNGs stay out of the repo (mirrors gmaps_maneuvers above).
+app/src/debug/assets/om_maneuvers/
