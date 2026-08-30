@@ -53,6 +53,73 @@ class NaviParserTest {
         assertFalse(NaviParser.isSupported("app.organicmapsx.other"))
     }
 
+    // --- komoot (cycling/hiking). Every string below was captured from a live navigation
+    // session on de.komoot.android 2026.34.2: the whole update is in the title,
+    // "<distance> • <maneuver> · <street>", with text/bigText/subText all null. ---
+
+    private fun komoot(title: String?) = NaviParser.parse(NaviParser.PKG_KOMOOT, title, null)
+
+    @Test fun komootIsSupported() {
+        assertTrue(NaviParser.isSupported("de.komoot.android"))
+        assertTrue(NaviParser.isSupported("de.komoot.android.beta"))
+        assertFalse(NaviParser.isSupported("de.komootx.other"))
+        assertFalse(NaviParser.isSupported("com.example.komoot"))
+    }
+
+    @Test fun detectMatchesKomoot() {
+        assertTrue(NaviParser.isDetected("de.komoot.android", setOf(NaviParser.PKG_KOMOOT)))
+        assertTrue(NaviParser.isDetected("de.komoot.android.beta", setOf(NaviParser.PKG_KOMOOT)))
+        assertFalse(NaviParser.isDetected("de.komoot.android", setOf(NaviParser.PKG_GOOGLE_MAPS)))
+    }
+
+    @Test fun komootTurnLeftDropsTheDuplicateDistance() {
+        val d = komoot("270 m • Turn left · Path")!!
+        assertEquals(Direction.LEFT, d.direction)
+        assertTrue(d.maneuverFromText)
+        // The distance must appear once: compose() adds it, the instruction must not repeat it.
+        assertEquals("270 m — Turn left · Path", d.instructionText)
+        assertEquals(270.0, d.distanceMeters!!, 0.01)
+    }
+
+    @Test fun komootKeepRight() {
+        val d = komoot("20 m • Keep right · Hiking Path")!!
+        assertEquals(Direction.KEEP_RIGHT, d.direction)
+        assertEquals("20 m — Keep right · Hiking Path", d.instructionText)
+    }
+
+    @Test fun komootDestinationStreetIsArrival() {
+        // No "·" suffix on this one.
+        val d = komoot("120 m • Destination Street")!!
+        assertEquals(Direction.ARRIVE, d.direction)
+        assertEquals("120 m — Destination Street", d.instructionText)
+    }
+
+    @Test fun komootRouteStartIsDepart() {
+        val d = komoot("61 m • on Hoftalstraße head south west to follow the route")!!
+        assertEquals(Direction.DEPART, d.direction)
+    }
+
+    @Test fun komootStreetNameIsNeverKeywordMatched() {
+        // The "·" suffix is a street name: a PT "Rua Direita" must NOT become a RIGHT turn.
+        // Only the segment between "•" and "·" is classified.
+        val d = komoot("80 m • Go straight · Rua Direita")!!
+        assertEquals(Direction.STRAIGHT, d.direction)
+        assertEquals("80 m — Go straight · Rua Direita", d.instructionText)
+    }
+
+    @Test fun komootNonNavTitlesCarryNothingToShow() {
+        // Session start, paused, GPS loss and the wrong-way warning have no distance and no
+        // maneuver keyword, so the listener's content guard drops them. "Turn around" being
+        // among them is deliberate — see parseKomoot's docs.
+        listOf("Let's go!", "Paused • Tap to resume",
+               "No GPS • Ensure you have a clear view of the sky", "Turn around").forEach { title ->
+            val d = komoot(title)!!
+            assertNull("'$title' must not report a distance", d.distanceMeters)
+            assertNull("'$title' must not report an ETA", d.eta)
+            assertFalse("'$title' must not claim a maneuver", d.maneuverFromText)
+        }
+    }
+
     // --- OsmAnd flavours (free / plus / F-Droid / nightly / store builds) ---
 
     @Test fun everyOsmandFlavourIsSupported() {

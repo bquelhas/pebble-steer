@@ -376,6 +376,7 @@ class MainActivity : AppCompatActivity() {
             root.findViewById<MaterialCheckBox>(R.id.chkDetectOsmand) to setOf(NaviParser.PKG_OSMAND, NaviParser.PKG_OSMAND_FREE),
             root.findViewById<MaterialCheckBox>(R.id.chkDetectComaps) to setOf(NaviParser.PKG_COMAPS),
             root.findViewById<MaterialCheckBox>(R.id.chkDetectOrganic) to setOf(NaviParser.PKG_ORGANIC),
+            root.findViewById<MaterialCheckBox>(R.id.chkDetectKomoot) to setOf(NaviParser.PKG_KOMOOT),
         )
         val current = NavPrefs.getDetectApps(applicationContext)
         boxes.forEach { (box, pkgs) ->

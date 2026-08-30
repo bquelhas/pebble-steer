@@ -495,6 +495,13 @@
             android:fontFamily="sans-serif-condensed"
             android:text="@string/detect_organic" />
 
+        <com.google.android.material.checkbox.MaterialCheckBox
+            android:id="@+id/chkDetectKomoot"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-condensed"
+            android:text="@string/detect_komoot" />
+
         <!-- About / source: link to GitHub so users can download or share the APK -->
         <TextView
             android:layout_width="wrap_content"
