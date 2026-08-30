@@ -118,6 +118,7 @@
     <string name="detect_osmand">OsmAnd</string>
     <string name="detect_comaps">CoMaps</string>
     <string name="detect_organic">Organic Maps</string>
+    <string name="detect_komoot">komoot</string>
 
     <!-- Aviso de programador -->
     <string name="developer_warn_title">Apenas para testes</string>

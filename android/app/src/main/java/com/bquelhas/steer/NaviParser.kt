@@ -56,6 +56,11 @@ object NaviParser {
     /** Any CoMaps flavour (google / fdroid / IzzyOnDroid / Codeberg …). */
     fun isComaps(pkg: String): Boolean = pkg == PKG_COMAPS_BASE || pkg.startsWith(PKG_COMAPS_PREFIX)
 
+    // komoot (cycling/hiking) ships a single Play package; the prefix also covers beta builds.
+    const val PKG_KOMOOT = "de.komoot.android"
+    private const val PKG_KOMOOT_PREFIX = "de.komoot.android."
+    fun isKomoot(pkg: String): Boolean = pkg == PKG_KOMOOT || pkg.startsWith(PKG_KOMOOT_PREFIX)
+
     // CoMaps / Organic Maps share one notification format: title = distance, text =
     // street name, and the maneuver lives ONLY as the engine-rendered largeIcon bitmap
     // (no maneuver text anywhere). They are handled like Google Maps — the glyph is
@@ -65,10 +70,11 @@ object NaviParser {
     private val ICON_ONLY = setOf(PKG_ORGANIC)
     private fun isIconOnly(pkg: String): Boolean = isOrganic(pkg) || isComaps(pkg)
 
-    val SUPPORTED = setOf(PKG_GOOGLE_MAPS, PKG_OSMAND, PKG_OSMAND_FREE, PKG_COMAPS, PKG_ORGANIC, PKG_ORGANIC_WEB)
+    val SUPPORTED = setOf(PKG_GOOGLE_MAPS, PKG_OSMAND, PKG_OSMAND_FREE, PKG_COMAPS, PKG_ORGANIC, PKG_ORGANIC_WEB, PKG_KOMOOT)
 
     /** Whether Steer reads this navigator at all (any CoMaps/OsmAnd/Organic flavour included). */
-    fun isSupported(pkg: String): Boolean = pkg in SUPPORTED || isComaps(pkg) || isOsmand(pkg) || isOrganic(pkg)
+    fun isSupported(pkg: String): Boolean =
+        pkg in SUPPORTED || isComaps(pkg) || isOsmand(pkg) || isOrganic(pkg) || isKomoot(pkg)
 
     /**
      * Whether [pkg] should be read given the user's detect-apps selection. CoMaps and OsmAnd
@@ -80,6 +86,7 @@ object NaviParser {
         isComaps(pkg) -> detect.any { isComaps(it) }
         isOsmand(pkg) -> detect.any { isOsmand(it) }
         isOrganic(pkg) -> detect.any { isOrganic(it) }
+        isKomoot(pkg) -> detect.any { isKomoot(it) }
         else -> false
     }
 
@@ -94,6 +101,7 @@ object NaviParser {
         if (!isSupported(pkg)) return null
         val eta = extractEtaField(subText, etaMode)
         if (isOsmand(pkg)) return parseOsmand(title, text, eta, units)
+        if (isKomoot(pkg)) return parseKomoot(title, eta, units)
         if (isIconOnly(pkg)) return parseIconOnly(title, text, eta, units)
 
         val t = listOfNotNull(title, text).joinToString(" ").trim()
@@ -236,6 +244,40 @@ object NaviParser {
             .ifBlank { combined }
         return NaviData(direction, compose(distance, instruction), maneuverFromText = hasManeuverKeyword(combined), eta = eta,
             distanceMeters = distanceMetersOf(titleStr) ?: distanceMetersOf(big))
+    }
+
+    /**
+     * komoot format (captured from de.komoot.android 2026.34.2): EVERYTHING is in the title —
+     * "270 m • Turn left · Path" — with text, bigText and subText all null. So: distance before
+     * the bullet, maneuver after it, street/way type after the "·". No subText means komoot
+     * never supplies an ETA; the watch's ETA field stays empty for a komoot route.
+     *
+     * The maneuver is classified from the segment BETWEEN the separators, not the whole title:
+     * the "·" suffix is a street name, and keyword-matching it would turn a "Rua Direita" into a
+     * RIGHT turn (the same trap documented for CoMaps/Organic above). The displayed instruction
+     * keeps the street, only the leading distance is dropped — [compose] re-adds it once.
+     *
+     * Titles that carry no maneuver and no distance — "Let's go!" (session start), "Paused • Tap
+     * to resume", "No GPS • …" and "Turn around" (wrong-way warning) — parse to a NaviData with
+     * nothing set, which the listener's content guard then drops. That is intended for the first
+     * three. "Turn around" is a DELIBERATE omission: komoot phrases its wrong-way warning
+     * differently from every other app's "u-turn", and matching it would mean widening the shared
+     * keyword table, so wrong-way warnings simply don't reach the watch.
+     *
+     * Not covered by capture: komoot roundabouts ("Roundabout take 2nd exit" per its resources)
+     * never appeared in 119 samples — hiking/cycling routes rarely use them. Should one occur,
+     * [classifyManeuver]'s existing roundabout + EXIT_RE handling reads it without changes.
+     */
+    private fun parseKomoot(title: String?, eta: String? = null, units: UnitSystem = UnitSystem.AUTO): NaviData? {
+        val t = title?.trim().orEmpty()
+        if (t.isEmpty()) return null
+        // "270 m • Turn left · Path" -> instruction "Turn left · Path", maneuver "Turn left".
+        // Titles without separators ("Turn around") fall back to the whole string.
+        val instruction = t.substringAfter('•', t).trim()
+        val maneuver = instruction.substringBefore('·').trim()
+        return NaviData(mapManeuver(maneuver), compose(extractDistance(t, units), instruction),
+            maneuverFromText = hasManeuverKeyword(maneuver), eta = eta,
+            distanceMeters = distanceMetersOf(t))
     }
 
     /**

@@ -121,6 +121,7 @@
     <string name="detect_osmand">OsmAnd</string>
     <string name="detect_comaps">CoMaps</string>
     <string name="detect_organic">Organic Maps</string>
+    <string name="detect_komoot">komoot</string>
 
     <!-- Developer warning -->
     <string name="developer_warn_title">For testing only</string>
