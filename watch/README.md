@@ -6,8 +6,8 @@ watch half of a two-part project — the
 [Steer companion Android app](../android) reads navigation from your map app
 and forwards it here.
 
-Built with the Pebble SDK for **aplite, basalt, chalk, diorite and emery**
-(Pebble Time 2 is the main target).
+Built with the Pebble SDK for **aplite, basalt, chalk, diorite, emery and
+flint** (Pebble Time 2 is the main target).
 
 ## Screenshots
 
@@ -25,10 +25,11 @@ Captured on the emery (Pebble Time 2) emulator, driving a simulated trip:
 
 - Next-maneuver icon (a 41-entry maneuver set drawn as Pebble Draw Commands,
   plus raw-icon passthrough for map apps that ship their own glyphs).
-- Distance + street/instruction line with an animated digit "squash" morph.
+- Distance + street/instruction line.
 - ETA display.
 - Configurable background colour, per-turn vibration.
-- Speed-limit alert (fed by the phone's GPS).
+- Favourites menu: pick a destination on the watch and the phone starts
+  navigating to it.
 - Automatic night backlight: during a maneuver between 20:00 and 07:00 the
   screen lights itself, tinted **red** on Pebble Time 2 to protect night vision.
 - Interface in English or Portuguese, chosen automatically from the watch
@@ -42,14 +43,11 @@ The companion app reads turn-by-turn guidance from:
 - **OsmAnd** (both the Play and free/F-Droid builds)
 - **CoMaps**
 - **Organic Maps**
-
-Waze can be *launched* to a favourite from the phone, but its notifications
-don't expose the maneuver, so Steer can't mirror a Waze route to the watch.
+- **komoot**
 
 ### Planned / in progress
 
-- On-watch speedometer (the speed-limit alert above already works).
-- Launching a favourite destination directly from the watch.
+- On-watch speedometer and speed-limit alert (both built, switched off for now).
 
 ## Building
 

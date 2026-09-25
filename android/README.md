@@ -3,9 +3,9 @@
 Steer's phone half. It reads turn-by-turn navigation from your map app's
 notifications and forwards each maneuver to a **Pebble** watch running the
 [Steer watchapp](../watch): next-turn icon,
-distance, street/instruction, ETA and an over-limit speed alert.
+distance, street/instruction and ETA.
 
-- **Package / app id:** `com.bquelhas.navme` (display name "Steer").
+- **Package / app id:** `com.bquelhas.steer` (display name "Steer").
 - **Min SDK 24**, Material You (dynamic colours, follows system theme).
 - **Interface** in English or Portuguese (chosen from the device language).
 - **Licence:** MIT (see [LICENSE](LICENSE)); attribution in [CREDITS.md](CREDITS.md).
@@ -13,14 +13,11 @@ distance, street/instruction, ETA and an over-limit speed alert.
 ### Compatible navigation apps
 
 Turn-by-turn guidance is read from **Google Maps**, **OsmAnd** (Play and
-free/F-Droid builds), **CoMaps** and **Organic Maps**. Waze can be *launched*
-to a favourite, but its notifications don't expose the maneuver, so a live Waze
-route can't be mirrored to the watch.
+free/F-Droid builds), **CoMaps**, **Organic Maps** and **komoot**.
 
 ### Planned / in progress
 
-- On-watch speedometer (the speed-limit alert already works).
-- Launching a favourite destination directly from the watch.
+- On-watch speedometer and speed-limit alert (both built, switched off for now).
 
 ## How it works
 
@@ -31,34 +28,48 @@ Map app (Google Maps, …)
 NavNotificationListenerService     ← requires "Notification access" permission
     │  NaviParser: extract distance / street / maneuver icon, normalise units
     ▼
-PebbleEmitter                       ← PebbleKit CLASSIC (not PebbleKit 2)
+PebbleEmitter                       ← PebbleKit 2 first, classic PebbleKit as fallback
     │  AppMessage keyed by NavKeys (mirrors the watch's package.json messageKeys)
     ▼
 Steer watchapp on the Pebble
 ```
 
-Key pieces (all under `app/src/main/java/com/bquelhas/navme/`):
+Key pieces (all under `app/src/main/java/com/bquelhas/steer/`):
 
 | File | Role |
 |------|------|
 | `NavNotificationListenerService.kt` | Listens to nav notifications, drives the pipeline |
 | `NaviParser.kt` | Parses distance/street from notification text; metric/imperial units |
 | `ManeuverClassifier.kt` / `ManeuverFingerprints.kt` | Classifies a maneuver from the notification's icon |
-| `PebbleEmitter.kt` | Sends AppMessages to the watch (classic PebbleKit) |
+| `PebbleEmitter.kt` | Sends AppMessages to the watch (PebbleKit 2, classic fallback) |
+| `Pk2Link.kt` | PebbleKit 2 transport: call timeouts, back-off, picks the Pebble app that has the watch |
+| `SteerPebbleListenerService.kt` | Receives watch messages over PebbleKit 2; tracks the watchapp session |
+| `WatchMessage.kt` | One AppMessage, rendered for either PebbleKit |
 | `NavKeys.kt` | Message-key constants — must match the watch's `package.json` |
 | `SpeedProvider.kt` | GPS speed for the watch speedometer / speed alert |
-| `Favorites*.kt`, `NavLauncher.kt`, `WatchCommandReceiver.kt` | Favourite destinations + launch-from-watch |
+| `Favorites*.kt`, `NavLauncher.kt`, `WatchCommands.kt`, `WatchCommandReceiver.kt` | Favourite destinations + launch-from-watch |
 | `DeveloperActivity.kt`, `MockNav*`, `DebugCycler.kt` | Debug tools (gated behind a master switch) |
 | `PbwInstaller.kt` | Installs the bundled watchapp `.pbw` onto the watch |
 
-### Why PebbleKit *classic* and not PebbleKit 2
+### PebbleKit 2 first, classic PebbleKit as fallback
 
-On the Core Devices app, PebbleKit 2's `sendDataToPebble` fails with
-`FailedDifferentAppOpen` whenever the app it tracks as "active" isn't our UUID,
-and `startAppOnTheWatch` only flips that registration without actually focusing
-the app — a deadlock. The classic PebbleKit path
-(`PebbleKit.sendDataToPebble` / `startAppOnPebble`) works reliably. Keep using
-it.
+The Pebble / Core Devices app picks the protocol per watchapp from the
+installed `.pbw`: a watchapp whose `package.json` lists an Android package under
+`companionApp` is served over **PebbleKit 2 only**, any other watchapp over
+**classic PebbleKit only**. The Steer watchapp declares `companionApp` (since
+1.6.0), so the phone sends over PebbleKit 2 and falls back to classic PebbleKit
+whenever PebbleKit 2 didn't deliver — the original Pebble app, and older
+watchapp builds. Core only listens for the classic broadcast during a classic
+session, so the fallback never delivers a message twice. PebbleKit 2 is also
+what Pebble apps that block classic PebbleKit (e.g. Gravel) need.
+
+**Rollout rule:** never publish a `.pbw` with `companionApp` before the APK that
+speaks PebbleKit 2 — an older APK only speaks classic, which Core ignores for
+such a watchapp.
+
+Before 1.6.0 the watchapp had no `companionApp`, so Core never opened a
+PebbleKit 2 session for it and every PebbleKit 2 send failed with
+`FailedDifferentAppOpen` — which is why Steer used classic PebbleKit only.
 
 ## Building
 
