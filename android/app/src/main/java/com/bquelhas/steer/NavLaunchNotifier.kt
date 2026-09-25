@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 
@@ -42,6 +43,9 @@ object NavLaunchNotifier {
     }
 
     private fun ensureChannel(context: Context) {
+        // Channels are API 26+; below that NotificationCompat ignores the channel id and the
+        // builder's priority stands in for the channel importance.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val mgr = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (mgr.getNotificationChannel(CHANNEL_ID) == null) {
             mgr.createNotificationChannel(
