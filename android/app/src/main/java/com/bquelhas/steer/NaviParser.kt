@@ -275,9 +275,14 @@ object NaviParser {
         // Titles without separators ("Turn around") fall back to the whole string.
         val instruction = t.substringAfter('•', t).trim()
         val maneuver = instruction.substringBefore('·').trim()
-        return NaviData(mapManeuver(maneuver), compose(extractDistance(t, units), instruction),
+        // The distance is read ONLY from the segment before the bullet, where every captured nav
+        // title carries it. A komoot status title that merely mentions a distance further on (a
+        // tour-recording summary, say) then has no distance and no maneuver keyword, and the
+        // listener's content guard drops it instead of drawing a straight arrow on the watch.
+        val head = t.substringBefore('•', "")
+        return NaviData(mapManeuver(maneuver), compose(extractDistance(head, units), instruction),
             maneuverFromText = hasManeuverKeyword(maneuver), eta = eta,
-            distanceMeters = distanceMetersOf(t))
+            distanceMeters = distanceMetersOf(head))
     }
 
     /**

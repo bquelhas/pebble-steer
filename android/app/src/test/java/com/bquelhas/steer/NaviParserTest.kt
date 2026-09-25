@@ -120,6 +120,16 @@ class NaviParserTest {
         }
     }
 
+    @Test fun komootDistanceComesOnlyFromBeforeTheBullet() {
+        // A status title that mentions a distance AFTER the bullet (e.g. a tour-recording
+        // summary) must not look like a maneuver: no distance, no keyword -> content guard drops it.
+        val d = komoot("Recording • 5.2 km · 1:02 h")!!
+        assertNull(d.distanceMeters)
+        assertFalse(d.maneuverFromText)
+        // Imperial nav titles keep their leading distance.
+        assertEquals(0.2 * 1609.344, komoot("0.2 mi • Turn right · Trail")!!.distanceMeters!!, 1.0)
+    }
+
     // --- OsmAnd flavours (free / plus / F-Droid / nightly / store builds) ---
 
     @Test fun everyOsmandFlavourIsSupported() {
