@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Needed to post the fake Google-Maps navigation notification on Android 13+. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -135,6 +136,18 @@
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <!-- PebbleKit 2 endpoint: Core (or another PK2 Pebble app) binds it while the Steer
+             watchapp runs. Exported by design — the library only accepts calls from the
+             selected Pebble app. -->
+        <service
+            android:name=".SteerPebbleListenerService"
+            android:exported="true"
+            tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="io.rebble.pebblekit2.RECEIVE_DATA_FROM_WATCH" />
             </intent-filter>
         </service>
     </application>

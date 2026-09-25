@@ -27,6 +27,16 @@
       "onlyShownOnCommunication": false,
       "hiddenApp": false
     },
+    "companionApp": {
+      "android": {
+        "url": "https://github.com/bquelhas/pebble-steer/releases/latest",
+        "apps": [
+          {
+            "package": "com.bquelhas.steer"
+          }
+        ]
+      }
+    },
     "messageKeys": {
       "NAV_TURN": 0,
       "NAV_TEXT_BEGIN": 1,

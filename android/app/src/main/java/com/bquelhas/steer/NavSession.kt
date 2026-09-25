@@ -3,7 +3,7 @@ package com.bquelhas.steer
 /**
  * Process-wide snapshot of the live navigation session. Written only by
  * [NavNotificationListenerService]; read by components that run beside it — namely
- * [WatchCommandReceiver], which replays [lastData] when the watchapp (re)launches
+ * [WatchCommands.resync], which replays [lastData] when the watchapp (re)launches
  * mid-route so the watch shows the current maneuver immediately instead of sitting
  * on "Waiting for signal..." until the next notification update.
  */

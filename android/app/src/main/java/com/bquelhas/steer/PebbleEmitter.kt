@@ -3,7 +3,6 @@ package com.bquelhas.steer
 import android.content.Context
 import android.util.Log
 import com.getpebble.android.kit.PebbleKit
-import com.getpebble.android.kit.util.PebbleDictionary
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -11,58 +10,99 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Sends a [NaviData] to the NavMe watchapp via the Core Devices bridge.
+ * Sends everything the phone pushes to the Steer watchapp: nav frames, settings, favorites and
+ * the autolaunch.
  *
- * Data send uses the **legacy/classic PebbleKit** (`PebbleKit.sendDataToPebble`, the
- * `com.getpebble.action.app.SEND` broadcast). This was re-adopted after PebbleKit2 was found
- * UNUSABLE for our case: PK2's `DefaultPebbleSender.sendDataToPebble` is a pure relay that returns
- * whatever verdict Core puts in the reply bundle, and Core rejects every send with
- * `FailedDifferentAppOpen` whenever its tracked "active app" (`content://coredevices.coreapp.pebblekit/
- * activeApp/<serial>`) isn't our UUID — which it routinely isn't, because Core's `startAppOnTheWatch`
- * only flips that record optimistically and does NOT actually foreground the watchapp (verified
- * on-device 2026-06-26: startAppOnTheWatch=Success yet the very next send still NACKs
- * FailedDifferentAppOpen). The classic path has NO active-app gate — it broadcasts the AppMessage and
- * Core forwards it regardless. PebbleNavi (which works reliably on Core) uses ONLY classic PebbleKit
- * and no PK2 at all; we now mirror that.
+ * Every message tries two transports in order:
+ *  1. **PebbleKit 2** ([Pk2Link]) — required when the installed watchapp declares `companionApp`
+ *     in its package.json: Core then serves it over PK2 only, and PK2-only Pebble apps (e.g.
+ *     Gravel) don't accept classic PebbleKit at all.
+ *  2. **Classic PebbleKit** (the `com.getpebble.action.app.SEND` broadcast) whenever PK2 didn't
+ *     deliver — the original Pebble app, and Core running a watchapp build without
+ *     `companionApp`, which it serves over classic only.
+ * Core runs each watchapp session over exactly one of the two, and only registers its classic
+ * SEND receiver for a classic session, so the fallback never delivers a message twice.
  *
- * Core handles the classic `SEND` broadcast through its runtime-registered receiver
- * (`io.rebble.libpebblecommon.pebblekit.classic`); it is dynamically registered so it does not show
- * up in `pm query-receivers` (manifest-only) — the earlier "zero recipients" reading was that
- * artifact, not an absent receiver.
+ * History: in June 2026 PK2 looked unusable — every send came back FailedDifferentAppOpen, and
+ * data moved to classic only. The cause was the watchapp's package.json lacking `companionApp`,
+ * so Core never opened a PK2 session for Steer (Core source: CompanionAppLifecycleManager.android.kt,
+ * PebbleKit2.kt, PebbleSenderReceiver.kt).
  *
- * Sends are serialized through a [Mutex] off the caller's thread so concurrent maneuver frames
- * don't race while building/broadcasting the shared dictionary.
+ * Sends are serialized through a [Mutex] off the caller's thread so frames go out in order. A PK2
+ * send waits for the watch's ACK, so newer nav frames can queue behind one in flight; a queued
+ * frame that a newer one already superseded is dropped instead of being shown late.
  */
 object PebbleEmitter {
     private const val TAG = "NavMe/Emitter"
 
     /**
-     * Gap between the consecutive AppMessages of a favorites sync. Classic PebbleKit
-     * `sendDataToPebble` is fire-and-forget (no ACK wait), and the Core bridge / watch inbox
+     * Gap between the consecutive AppMessages of a favorites sync sent over CLASSIC PebbleKit,
+     * whose `sendDataToPebble` is fire-and-forget (no ACK wait): the Core bridge / watch inbox
      * silently DROPS messages fired back-to-back — which is why favorites defined on the phone
      * never showed up on the watch. Pacing the burst lets each message land before the next.
+     * A PK2 send already waits for the watch's ACK, so it needs no extra gap.
      */
     private const val FAV_SEND_GAP_MS = 250L
+
+    private enum class Transport { PK2, CLASSIC }
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val sendMutex = Mutex()
 
-    /** Legacy connection probe — Core re-exposes the basalt content provider it reads. */
-    fun isWatchConnected(context: Context): Boolean =
-        try { PebbleKit.isWatchConnected(context) } catch (e: Exception) { false }
+    /** Bumped per nav frame; a queued frame holding an older number has been superseded. */
+    private val navFrameSeq = AtomicLong()
 
-    /** Serializes one classic PebbleKit send, off the caller's thread. */
-    private fun send(context: Context, label: String, build: (PebbleDictionary) -> Unit) {
+    /** Transport of the previous message, to note in [NavLog] only when it changes. */
+    @Volatile private var lastTransport: Transport? = null
+
+    /**
+     * Whether a Pebble watch is connected: the classic provider (the original Pebble app, and
+     * Core, which re-exposes it), else any PK2-capable Pebble app that reports a connected watch.
+     */
+    fun isWatchConnected(context: Context): Boolean =
+        (try { PebbleKit.isWatchConnected(context) } catch (e: Exception) { false }) ||
+            Pk2Link.isWatchConnected(context)
+
+    /** Delivers one message — PK2 first, classic when PK2 didn't deliver. Call under [sendMutex]. */
+    private suspend fun deliver(appCtx: Context, label: String, msg: WatchMessage): Transport {
+        val pk2 = Pk2Link.send(appCtx, msg.toPk2())
+        val transport = if (pk2 == Pk2Link.Outcome.DELIVERED) {
+            Transport.PK2
+        } else {
+            PebbleKit.sendDataToPebble(appCtx, NavKeys.WATCH_UUID, msg.toClassic())
+            Transport.CLASSIC
+        }
+        Log.i(TAG, "$label -> sent(${transport.name.lowercase()})" +
+            (if (transport == Transport.CLASSIC) " pk2=$pk2" else ""))
+        if (transport != lastTransport) {
+            lastTransport = transport
+            NavLog.add("link: sending to the watch via " +
+                (if (transport == Transport.PK2) "PebbleKit 2" else "classic PebbleKit (PebbleKit 2: $pk2)"))
+        }
+        return transport
+    }
+
+    /** Serializes one send, off the caller's thread. [isStale] lets a superseded message bow out. */
+    private fun send(
+        context: Context,
+        label: String,
+        isStale: () -> Boolean = { false },
+        build: (WatchMessage) -> Unit,
+    ) {
         val appCtx = context.applicationContext
         scope.launch {
             sendMutex.withLock {
+                if (isStale()) {
+                    Log.d(TAG, "$label -> skipped (superseded by a newer frame)")
+                    return@withLock
+                }
                 try {
-                    val dict = PebbleDictionary()
-                    build(dict)
-                    PebbleKit.sendDataToPebble(appCtx, NavKeys.WATCH_UUID, dict)
-                    Log.i(TAG, "$label -> sent(classic)")
+                    val msg = WatchMessage()
+                    build(msg)
+                    deliver(appCtx, label, msg)
                 } catch (e: Exception) {
                     Log.e(TAG, "$label send failed: ${e.message}")
                 }
@@ -74,7 +114,10 @@ object PebbleEmitter {
         val label = "sent turn=${data.direction} text='${data.instructionText}'" +
             (if (data.eta != null) " +eta(${data.eta})" else "") +
             (if (iconBytes != null) " +icon(${iconBytes.size}B)" else "")
-        send(context, label) { dict ->
+        // Each frame carries the complete display state, so the newest one makes older queued
+        // frames redundant.
+        val seq = navFrameSeq.incrementAndGet()
+        send(context, label, isStale = { navFrameSeq.get() != seq }) { dict ->
             dict.addInt32(NavKeys.NAV_TURN, data.directionId)
             dict.addUint8(NavKeys.NAV_TEXT_BEGIN, 1.toByte())
             dict.addString(NavKeys.NAV_TEXT, data.instructionText.take(120))
@@ -157,18 +200,16 @@ object PebbleEmitter {
         scope.launch {
             sendMutex.withLock {
                 try {
-                    PebbleDictionary()
-                        .apply { addUint8(NavKeys.NAV_FAV_COUNT, favs.size.toByte()) }
-                        .also { PebbleKit.sendDataToPebble(appCtx, NavKeys.WATCH_UUID, it) }
-                    Log.i(TAG, "favCount=${favs.size} -> sent(classic)")
+                    var via = deliver(appCtx, "favCount=${favs.size}", WatchMessage().apply {
+                        addUint8(NavKeys.NAV_FAV_COUNT, favs.size.toByte())
+                    })
                     favs.forEachIndexed { i, fav ->
-                        delay(FAV_SEND_GAP_MS)
-                        PebbleDictionary().apply {
+                        if (via == Transport.CLASSIC) delay(FAV_SEND_GAP_MS)
+                        via = deliver(appCtx, "fav[$i]=${fav.label}", WatchMessage().apply {
                             addUint8(NavKeys.NAV_FAV_INDEX, i.toByte())
                             addString(NavKeys.NAV_FAV_NAME, fav.label.take(32))
                             addUint8(NavKeys.NAV_FAV_ICON, fav.icon.coerceIn(0, 255).toByte())
-                        }.also { PebbleKit.sendDataToPebble(appCtx, NavKeys.WATCH_UUID, it) }
-                        Log.i(TAG, "fav[$i]=${fav.label} -> sent(classic)")
+                        })
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "sendFavorites failed: ${e.message}")
@@ -178,21 +219,28 @@ object PebbleEmitter {
     }
 
     /**
-     * Brings the NavMe watchapp to the foreground on the Pebble (autolaunch).
+     * Brings the Steer watchapp to the foreground on the Pebble (autolaunch).
      *
-     * Uses the classic `PebbleKit.startAppOnPebble`, the same launch path PebbleNavi uses on Core.
-     * (PK2's `startAppOnTheWatch` returns Success but only flips Core's active-app record without
-     * actually foregrounding the app on the watch, so it never satisfied the send gate.)
+     * PK2's startAppOnTheWatch and the classic START broadcast end in the same Core call
+     * (launchApp: tell the watch to start the app, then wait until it reports it running), so
+     * PK2 is tried first for its verdict and classic covers Pebble apps without PK2. On a PK2
+     * TIMEOUT the launch is already under way — firing classic as well would launch it twice.
      */
     fun launchWatchApp(context: Context) {
         val appCtx = context.applicationContext
         scope.launch {
             sendMutex.withLock {
                 try {
-                    PebbleKit.startAppOnPebble(appCtx, NavKeys.WATCH_UUID)
-                    Log.i(TAG, "startAppOnPebble(classic) requested")
+                    when (val pk2 = Pk2Link.startApp(appCtx)) {
+                        Pk2Link.Outcome.DELIVERED -> Log.i(TAG, "startAppOnTheWatch(pk2) -> running")
+                        Pk2Link.Outcome.TIMEOUT -> Log.w(TAG, "startAppOnTheWatch(pk2) -> no verdict yet")
+                        else -> {
+                            PebbleKit.startAppOnPebble(appCtx, NavKeys.WATCH_UUID)
+                            Log.i(TAG, "startAppOnPebble(classic) requested (pk2=$pk2)")
+                        }
+                    }
                 } catch (e: Exception) {
-                    Log.e(TAG, "startAppOnPebble failed: ${e.message}")
+                    Log.e(TAG, "launchWatchApp failed: ${e.message}")
                 }
             }
         }

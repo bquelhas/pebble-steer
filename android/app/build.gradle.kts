@@ -55,9 +55,13 @@ tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.con
 }
 
 dependencies {
+    // Classic PebbleKit — fallback transport: the original Pebble app, and Core running a
+    // watchapp build without `companionApp` (see PebbleEmitter).
     implementation("com.getpebble:pebblekit:4.0.1")
-    // PebbleKit2 (Core Devices) — used only for autolaunch (startAppOnTheWatch); data
-    // send stays on the legacy lib above, which Core's classic compat still handles.
+    // PebbleKit 2 — primary transport (send, receive via SteerPebbleListenerService, autolaunch).
+    // Held at 1.2.0: 1.3.x needs compileSdk 37 (a newer Android Gradle Plugin) and only adds data
+    // logging / timeline actions, which Steer doesn't use. Its one relevant fix — cancellable
+    // requests — is covered by Pk2Link's own timeout.
     implementation("io.rebble.pebblekit2:client:1.2.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation(libs.androidx.core.ktx)

@@ -16,8 +16,9 @@ import android.util.Log
  * maneuver; `name` wins when both are given. Sends a fixed test instruction so the
  * watch draws the chosen NAV_TURN icon directly (no Maps glyph forwarding).
  *
- * Special: `--es name __LAUNCH__` fires [PebbleEmitter.launchWatchApp] (the PebbleKit2
- * autolaunch path) so the watchapp can be opened from adb to test autolaunch in isolation.
+ * Special: `--es name __LAUNCH__` fires [PebbleEmitter.launchWatchApp] (the autolaunch path:
+ * PebbleKit 2, classic fallback) so the watchapp can be opened from adb to test autolaunch in
+ * isolation.
  */
 class DebugIconReceiver : BroadcastReceiver() {
 
@@ -31,9 +32,9 @@ class DebugIconReceiver : BroadcastReceiver() {
         // cycler so it doesn't overwrite the chosen maneuver every few seconds.
         if (DebugCycler.isRunning()) DebugCycler.stop(context.applicationContext)
 
-        // Autolaunch test hook: open the watchapp via PebbleKit2 without a real nav session.
+        // Autolaunch test hook: open the watchapp without a real nav session.
         if (intent.getStringExtra("name")?.trim()?.uppercase() == "__LAUNCH__") {
-            Log.i(TAG, "DIAG: launchWatchApp() via PebbleKit2")
+            Log.i(TAG, "DIAG: launchWatchApp()")
             PebbleEmitter.launchWatchApp(context.applicationContext)
             return
         }
